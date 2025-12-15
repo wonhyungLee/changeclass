@@ -24,6 +24,7 @@ const App = () => {
   const [isNameSorted, setIsNameSorted] = useState(false); // 이름순 정렬 상태
   const [isScriptLoaded, setIsScriptLoaded] = useState(false); // 라이브러리 로드 상태
   const [searchTerm, setSearchTerm] = useState(''); // 검색어 상태
+  const [noteDraft, setNoteDraft] = useState(''); // 비고 편집용 임시 값
 
   // SheetJS 라이브러리 동적 로드 (미리보기용 - 로컬에선 삭제 권장)
   useEffect(() => {
@@ -38,6 +39,13 @@ const App = () => {
       }
     };
   }, []);
+
+  // 모달이 열릴 때마다 현재 비고 내용을 편집 필드에 채워준다.
+  useEffect(() => {
+    if (selectedStudent) {
+      setNoteDraft(selectedStudent.note || '');
+    }
+  }, [selectedStudent]);
 
   // 파일 업로드 및 파싱
   const handleFileUpload = (e) => {
@@ -61,9 +69,21 @@ const App = () => {
       const ws = wb.Sheets[wsname];
       const data = xlsxLib.utils.sheet_to_json(ws, { defval: "" });
 
+      const parseAssignedClass = (value) => {
+        if (value === undefined || value === null) return null;
+        const matched = String(value).match(/(\d+)/);
+        if (!matched) return null;
+        const parsed = parseInt(matched[1], 10);
+        return Number.isNaN(parsed) ? null : parsed;
+      };
+
       const formattedData = data.map((row, index) => {
         const rawGroupId = row['그룹ID'] || row['그룹id'] || row['GroupID'] || '';
         const cleanGroupId = String(rawGroupId).trim();
+        const assignedClass = parseAssignedClass(
+          row['배정반'] || row['배정 반'] || row['배정'] || row['신반']
+        );
+        const manualMoveFlag = row['수동이동여부'] || row['수동 이동 여부'] || row['수동이동'];
 
         return {
             id: `student-${index}`,
@@ -76,11 +96,43 @@ const App = () => {
             birth: row['생년월일'] || '',
             groupId: cleanGroupId, 
             originalData: row,
-            initialClass: null, 
-            isManuallyMoved: false
+            initialClass: assignedClass, 
+            newClass: assignedClass,
+            isManuallyMoved: !!(manualMoveFlag && String(manualMoveFlag).trim() !== '')
         };
       });
 
+      setSelectedStudent(null);
+
+      const hasAssignedClasses = formattedData.some(s => typeof s.newClass === 'number');
+      if (hasAssignedClasses) {
+        const restoredClasses = {};
+
+        formattedData.forEach(student => {
+          const targetClass = student.newClass || 1;
+          if (!restoredClasses[targetClass]) restoredClasses[targetClass] = [];
+          restoredClasses[targetClass].push({
+            ...student,
+            newClass: targetClass,
+            initialClass: student.initialClass ?? targetClass
+          });
+        });
+
+        // 반 번호 순으로 정렬된 객체 생성
+        const orderedClassIds = Object.keys(restoredClasses)
+          .map(id => parseInt(id))
+          .sort((a, b) => a - b);
+        const orderedClasses = {};
+        orderedClassIds.forEach(id => { orderedClasses[id] = restoredClasses[id]; });
+
+        setClasses(orderedClasses);
+        setTargetClassCount(Math.max(orderedClassIds.length, 1));
+        setStudents(formattedData);
+        setStep('dashboard');
+        return;
+      }
+
+      setClasses({});
       setRawData(formattedData);
       setStudents(formattedData);
       setStep('config');
@@ -351,6 +403,34 @@ const App = () => {
           groupId: '',
           note: (prev.note + ` (그룹 강제해제됨)`).trim()
       }));
+  };
+
+  // 비고 수정 (실시간 반영)
+  const updateStudentNote = (studentId, newNote) => {
+    setClasses(prev => {
+      const updated = {};
+      Object.keys(prev).forEach(classId => {
+        updated[classId] = prev[classId].map(student => 
+          student.id === studentId ? { ...student, note: newNote } : student
+        );
+      });
+      return updated;
+    });
+
+    setStudents(prev => prev.map(student => 
+      student.id === studentId ? { ...student, note: newNote } : student
+    ));
+
+    setSelectedStudent(prev => {
+      if (!prev || prev.id !== studentId) return prev;
+      return { ...prev, note: newNote };
+    });
+  };
+
+  const handleNoteChange = (value) => {
+    if (!selectedStudent) return;
+    setNoteDraft(value);
+    updateStudentNote(selectedStudent.id, value);
   };
 
   // --- 공통 이동 실행 함수 ---
@@ -870,10 +950,17 @@ const App = () => {
                 )}
 
                 <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
-                  <span className="text-xs text-yellow-600 block font-bold mb-1">비고 사항</span>
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap">
-                    {selectedStudent.note || "특이사항 없음"}
-                  </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-yellow-600 block font-bold">비고 사항</span>
+                    <span className="text-[10px] text-yellow-700">입력 시 자동 저장</span>
+                  </div>
+                  <textarea
+                    value={noteDraft}
+                    onChange={(e) => handleNoteChange(e.target.value)}
+                    rows={4}
+                    className="w-full text-sm text-slate-800 bg-white rounded border border-yellow-200 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 p-2 resize-none"
+                    placeholder="특이사항, 유의점 등을 입력하세요."
+                  />
                 </div>
               </div>
 
