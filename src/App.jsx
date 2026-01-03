@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-// import * as XLSX from 'xlsx'; // [로컬 VS Code용] npm install xlsx 후 주석 해제하세요
+import * as XLSX from 'xlsx';
 import { Upload, Users, Download, ArrowRight, Settings, RotateCcw, Save, FileSpreadsheet, Move, Info, X, Link, Tag, AlertTriangle, Maximize2, Minimize2, Plus, Trash2, CheckCircle2, ArrowDownAZ, ArrowUpDown, ChevronDown, Unlink, Search, MousePointerClick } from 'lucide-react';
 
 /**
@@ -11,9 +11,32 @@ import { Upload, Users, Download, ArrowRight, Settings, RotateCcw, Save, FileSpr
  * 4. (AI 기능 제외됨)
  */
 
+const normalizeText = (value) => {
+  if (value === undefined || value === null) return '';
+  return String(value).trim();
+};
+
+const normalizeGender = (value) => {
+  const raw = normalizeText(value);
+  if (!raw) return '미상';
+
+  const compact = raw.replace(/\s+/g, '').toLowerCase();
+  if (compact.includes('남') && compact.includes('여')) return '미상';
+
+  const male = new Set(['남', '남성', '남자', '남학생', 'm', 'male', 'boy', 'man']);
+  const female = new Set(['여', '여성', '여자', '여학생', 'f', 'female', 'girl', 'woman']);
+
+  if (male.has(compact)) return '남';
+  if (female.has(compact)) return '여';
+
+  if (compact.startsWith('남')) return '남';
+  if (compact.startsWith('여')) return '여';
+
+  return raw;
+};
+
 const App = () => {
   const [step, setStep] = useState('upload'); // upload, config, dashboard
-  const [rawData, setRawData] = useState([]);
   const [students, setStudents] = useState([]);
   const [targetClassCount, setTargetClassCount] = useState(3);
   const [classes, setClasses] = useState({});
@@ -22,23 +45,8 @@ const App = () => {
   const [isCompact, setIsCompact] = useState(false); 
   const [dragOverClassId, setDragOverClassId] = useState(null); // 드래그 중인 반 ID
   const [isNameSorted, setIsNameSorted] = useState(false); // 이름순 정렬 상태
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false); // 라이브러리 로드 상태
   const [searchTerm, setSearchTerm] = useState(''); // 검색어 상태
   const [noteDraft, setNoteDraft] = useState(''); // 비고 편집용 임시 값
-
-  // SheetJS 라이브러리 동적 로드 (미리보기용 - 로컬에선 삭제 권장)
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = "https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js";
-    script.async = true;
-    script.onload = () => setIsScriptLoaded(true);
-    document.body.appendChild(script);
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, []);
 
   // 모달이 열릴 때마다 현재 비고 내용을 편집 필드에 채워준다.
   useEffect(() => {
@@ -48,26 +56,20 @@ const App = () => {
   }, [selectedStudent]);
 
   // 파일 업로드 및 파싱
-  const handleFileUpload = (e) => {
-    // [로컬 수정 포인트] import 사용 시 window.XLSX 대신 XLSX 사용
-    const xlsxLib = window.XLSX; 
-    // const xlsxLib = XLSX; 
-
-    if (!xlsxLib) {
-      alert("엑셀 라이브러리가 로드되지 않았습니다. 잠시 후 다시 시도해주세요.");
-      return;
-    }
-
-    const file = e.target.files[0];
+  const handleFileUpload = async (e) => {
+    const input = e.target;
+    const file = input.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const bstr = evt.target.result;
-      const wb = xlsxLib.read(bstr, { type: 'binary' });
+    try {
+      const isCsv = file.name?.toLowerCase().endsWith('.csv') || file.type === 'text/csv';
+      const wb = isCsv
+        ? XLSX.read(await file.text(), { type: 'string' })
+        : XLSX.read(new Uint8Array(await file.arrayBuffer()), { type: 'array' });
+
       const wsname = wb.SheetNames[0];
       const ws = wb.Sheets[wsname];
-      const data = xlsxLib.utils.sheet_to_json(ws, { defval: "" });
+      const data = XLSX.utils.sheet_to_json(ws, { defval: "" });
 
       const parseAssignedClass = (value) => {
         if (value === undefined || value === null) return null;
@@ -79,26 +81,29 @@ const App = () => {
 
       const formattedData = data.map((row, index) => {
         const rawGroupId = row['그룹ID'] || row['그룹id'] || row['GroupID'] || '';
-        const cleanGroupId = String(rawGroupId).trim();
+        const cleanGroupId = normalizeText(rawGroupId);
         const assignedClass = parseAssignedClass(
           row['배정반'] || row['배정 반'] || row['배정'] || row['신반']
         );
         const manualMoveFlag = row['수동이동여부'] || row['수동 이동 여부'] || row['수동이동'];
+        const nameFromSeongmyeong = normalizeText(row['성명']);
+        const nameFromIreum = normalizeText(row['이름']);
+        const cleanName = nameFromSeongmyeong || nameFromIreum || '이름없음';
 
         return {
             id: `student-${index}`,
-            name: row['성명'] || row['이름'] || '이름없음',
-            gender: row['성별'] || '미상',
-            prevClass: row['반'] || '',
-            prevGrade: row['학년'] || '',
-            number: row['번호'] || '',
-            note: row['비고'] || '',
-            birth: row['생년월일'] || '',
+            name: cleanName,
+            gender: normalizeGender(row['성별']),
+            prevClass: normalizeText(row['반']),
+            prevGrade: normalizeText(row['학년']),
+            number: normalizeText(row['번호']),
+            note: normalizeText(row['비고']),
+            birth: normalizeText(row['생년월일']),
             groupId: cleanGroupId, 
             originalData: row,
             initialClass: assignedClass, 
             newClass: assignedClass,
-            isManuallyMoved: !!(manualMoveFlag && String(manualMoveFlag).trim() !== '')
+            isManuallyMoved: normalizeText(manualMoveFlag) !== ''
         };
       });
 
@@ -133,11 +138,14 @@ const App = () => {
       }
 
       setClasses({});
-      setRawData(formattedData);
       setStudents(formattedData);
       setStep('config');
-    };
-    reader.readAsBinaryString(file);
+    } catch (error) {
+      console.error(error);
+      alert("파일을 읽는 중 오류가 발생했습니다. 파일 형식(.xlsx/.xls/.csv)과 컬럼명을 확인해주세요.");
+    } finally {
+      input.value = '';
+    }
   };
 
   // 자동 반배정 로직
@@ -181,9 +189,9 @@ const App = () => {
       });
     });
 
-    const boys = normalStudents.filter(s => s.gender === '남성' || s.gender === '남');
-    const girls = normalStudents.filter(s => s.gender === '여성' || s.gender === '여');
-    const others = normalStudents.filter(s => !['남성', '남', '여성', '여'].includes(s.gender));
+    const boys = normalStudents.filter(s => s.gender === '남');
+    const girls = normalStudents.filter(s => s.gender === '여');
+    const others = normalStudents.filter(s => s.gender !== '남' && s.gender !== '여');
 
     const shuffle = (array) => array.sort(() => Math.random() - 0.5);
     const shuffledBoys = shuffle([...boys]);
@@ -202,9 +210,9 @@ const App = () => {
         
         let currentGenderCount = 0;
         if (genderType === 'boy') {
-            currentGenderCount = currentList.filter(s => s.gender === '남성' || s.gender === '남').length;
+            currentGenderCount = currentList.filter(s => s.gender === '남').length;
         } else if (genderType === 'girl') {
-            currentGenderCount = currentList.filter(s => s.gender === '여성' || s.gender === '여').length;
+            currentGenderCount = currentList.filter(s => s.gender === '여').length;
         } else {
             currentGenderCount = currentTotal; 
         }
@@ -262,7 +270,7 @@ const App = () => {
     setDragOverClassId(classId);
   };
 
-  const onDragLeave = (e) => {
+  const onDragLeave = () => {
     setDragOverClassId(null);
   };
 
@@ -475,10 +483,7 @@ const App = () => {
   };
 
   const exportExcel = () => {
-    const xlsxLib = window.XLSX; // 로컬용: XLSX
-    if (!xlsxLib) return;
-
-    const wb = xlsxLib.utils.book_new(); 
+    const wb = XLSX.utils.book_new(); 
     
     let allStudents = [];
     Object.keys(classes).forEach(classId => {
@@ -503,15 +508,15 @@ const App = () => {
         return a['성명'].localeCompare(b['성명']);
     });
 
-    const ws = xlsxLib.utils.json_to_sheet(allStudents);
-    xlsxLib.utils.book_append_sheet(wb, ws, "반배정결과");
-    xlsxLib.writeFile(wb, "2025학년도_반배정결과.xlsx");
+    const ws = XLSX.utils.json_to_sheet(allStudents);
+    XLSX.utils.book_append_sheet(wb, ws, "반배정결과");
+    XLSX.writeFile(wb, "2025학년도_반배정결과.xlsx");
   };
 
   const getStats = (studentList) => {
     const total = studentList.length;
-    const boys = studentList.filter(s => s.gender === '남성' || s.gender === '남').length;
-    const girls = studentList.filter(s => s.gender === '여성' || s.gender === '여').length;
+    const boys = studentList.filter(s => s.gender === '남').length;
+    const girls = studentList.filter(s => s.gender === '여').length;
     return { total, boys, girls };
   };
 
@@ -692,9 +697,9 @@ const App = () => {
                 <div className="text-sm text-slate-500">
                   총 <span className="font-bold text-slate-900">{students.length}</span>명 배정 완료
                   <span className="mx-2 text-slate-300">|</span>
-                  <span className="text-blue-600 font-medium">남 {students.filter(s=>s.gender==='남성'||s.gender==='남').length}</span>
+                  <span className="text-blue-600 font-medium">남 {students.filter(s => s.gender === '남').length}</span>
                   <span className="mx-1">/</span>
-                  <span className="text-pink-600 font-medium">여 {students.filter(s=>s.gender==='여성'||s.gender==='여').length}</span>
+                  <span className="text-pink-600 font-medium">여 {students.filter(s => s.gender === '여').length}</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-500">
                     <div className="flex items-center mr-3">
@@ -796,8 +801,8 @@ const App = () => {
                             className={`
                                 rounded-lg shadow-sm border transition-all duration-300 group relative
                                 ${isCompact ? 'p-1.5' : 'p-3'}
-                                ${student.gender === '남성' || student.gender === '남' ? 'border-l-4 border-l-blue-400' : ''}
-                                ${student.gender === '여성' || student.gender === '여' ? 'border-l-4 border-l-pink-400' : ''}
+                                ${student.gender === '남' ? 'border-l-4 border-l-blue-400' : ''}
+                                ${student.gender === '여' ? 'border-l-4 border-l-pink-400' : ''}
                                 ${isMatch 
                                     ? 'bg-yellow-50 ring-4 ring-yellow-400 ring-opacity-50 scale-105 z-10 border-yellow-200' 
                                     : 'bg-white border-slate-200 hover:shadow-md hover:border-indigo-300 cursor-move'
