@@ -525,6 +525,15 @@ const App = () => {
             <h1 className="text-xl font-bold">스마트 반배정 마법사 v2.6</h1>
           </div>
           <div className="flex space-x-4 items-center">
+            <a
+              href="./배포용_사용설명서.html"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center px-3 py-1 bg-indigo-500 hover:bg-indigo-400 rounded text-sm transition font-medium border border-indigo-400"
+              title="사용설명서 열기"
+            >
+              <Info className="w-4 h-4 mr-1" /> 사용설명서
+            </a>
             {step === 'dashboard' && (
                <>
                 {/* 검색바 */}
