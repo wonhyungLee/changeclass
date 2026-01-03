@@ -60,6 +60,13 @@ const App = () => {
       return false;
     }
   });
+  const [isSummaryHidden, setIsSummaryHidden] = useState(() => {
+    try {
+      return localStorage.getItem('changeclass:summaryHidden') === '1';
+    } catch {
+      return false;
+    }
+  });
 
   const classGridRef = useRef(null);
   const classColumnRefs = useRef({});
@@ -125,6 +132,14 @@ const App = () => {
       // ignore
     }
   }, [isHeaderCollapsed]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('changeclass:summaryHidden', isSummaryHidden ? '1' : '0');
+    } catch {
+      // ignore
+    }
+  }, [isSummaryHidden]);
 
   useEffect(() => {
     if (!moveFocus) return;
@@ -633,6 +648,8 @@ const App = () => {
     return { total, boys, girls };
   };
 
+  const isSummaryVisible = !isCompact && !isSummaryHidden;
+
   const orderedClassIds = Object.keys(classes).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 
   const scrollClassGridBy = (direction) => {
@@ -906,35 +923,53 @@ const App = () => {
 
 	        {/* Step 3: Dashboard */}
 	        {step === 'dashboard' && (
-	          <div className="animate-fade-in">
-	            {/* 상단 요약 바 */}
-	            {!isCompact && (
-	              <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200 mb-3 flex flex-wrap gap-4 items-center justify-between">
-                <div className="text-sm text-slate-500">
-                  총 <span className="font-bold text-slate-900">{students.length}</span>명 배정 완료
-                  <span className="mx-2 text-slate-300">|</span>
-                  <span className="text-blue-600 font-medium">남 {students.filter(s => s.gender === '남').length}</span>
-                  <span className="mx-1">/</span>
-                  <span className="text-pink-600 font-medium">여 {students.filter(s => s.gender === '여').length}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                    <div className="flex items-center mr-3">
-                         <span className="w-2 h-2 bg-blue-500 rounded-full mr-1"></span> 수동 이동됨
-                    </div>
-                    <div className="text-blue-600 flex items-center bg-blue-50 px-3 py-1 rounded-full font-medium">
-                        <Link className="w-3 h-3 mr-1" /> 그룹 배정
-                    </div>
-                </div>
-	              </div>
-	            )}
+		          <div className="animate-fade-in">
+		            {/* 상단 요약 바 */}
+		            {isSummaryVisible && (
+		              <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200 mb-3 flex flex-wrap gap-4 items-center justify-between">
+	                <div className="text-sm text-slate-500">
+	                  총 <span className="font-bold text-slate-900">{students.length}</span>명 배정 완료
+	                  <span className="mx-2 text-slate-300">|</span>
+	                  <span className="text-blue-600 font-medium">남 {students.filter(s => s.gender === '남').length}</span>
+	                  <span className="mx-1">/</span>
+	                  <span className="text-pink-600 font-medium">여 {students.filter(s => s.gender === '여').length}</span>
+	                </div>
+	                <div className="flex items-center gap-2 text-xs text-slate-500">
+	                    <div className="flex items-center mr-3">
+	                         <span className="w-2 h-2 bg-blue-500 rounded-full mr-1"></span> 수동 이동됨
+	                    </div>
+	                    <div className="text-blue-600 flex items-center bg-blue-50 px-3 py-1 rounded-full font-medium">
+	                        <Link className="w-3 h-3 mr-1" /> 그룹 배정
+	                    </div>
+	                    <button
+	                      type="button"
+	                      onClick={() => setIsSummaryHidden(true)}
+	                      className="ml-1 p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 transition"
+	                      title="요약 숨기기"
+	                    >
+	                      <X className="w-4 h-4" />
+	                    </button>
+	                </div>
+		              </div>
+		            )}
 
-	            {/* 반 바로가기 / 가로 스크롤 컨트롤 (PC) */}
-	            <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 mb-3 flex items-center gap-2">
-	              <span className="text-xs font-bold text-slate-600 whitespace-nowrap">반 바로가기</span>
-	              <div className="hidden lg:flex items-center gap-1">
-	                <button
-	                  type="button"
-	                  onClick={() => scrollClassGridBy(-1)}
+		            {/* 반 바로가기 / 가로 스크롤 컨트롤 (PC) */}
+		            <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 mb-3 flex items-center gap-2">
+		              <span className="text-xs font-bold text-slate-600 whitespace-nowrap">반 바로가기</span>
+		              {!isCompact && isSummaryHidden && (
+		                <button
+		                  type="button"
+		                  onClick={() => setIsSummaryHidden(false)}
+		                  className="px-2 py-1 rounded-full text-[11px] font-bold border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 text-slate-700 transition whitespace-nowrap"
+		                  title="요약 표시"
+		                >
+		                  요약 보기
+		                </button>
+		              )}
+		              <div className="hidden lg:flex items-center gap-1">
+		                <button
+		                  type="button"
+		                  onClick={() => scrollClassGridBy(-1)}
 	                  className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition"
 	                  title="왼쪽으로 이동"
 	                >
@@ -969,12 +1004,20 @@ const App = () => {
 	                      </button>
 	                    );
 	                  })}
-	                </div>
-	              </div>
-	              <span className="hidden lg:block text-xs text-slate-500 whitespace-nowrap">
-	                학생 이동 시 자동으로 이동 위치로 이동합니다
-	              </span>
-	            </div>
+		                </div>
+		              </div>
+		              <span className="hidden lg:flex items-center gap-2 text-xs text-slate-500 whitespace-nowrap">
+		                <span className="inline-flex items-center gap-1">
+		                  <span className="px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-[11px] font-mono text-slate-700">
+		                    Space
+		                  </span>
+		                  <span className="text-slate-400">+</span>
+		                  <span>좌클릭 드래그로 좌우 이동</span>
+		                </span>
+		                <span className="text-slate-300">|</span>
+		                <span>학생 이동 시 자동 이동</span>
+		              </span>
+		            </div>
 
 		            {/* 반별 컬럼 그리드 */}
 		            <div
@@ -982,12 +1025,18 @@ const App = () => {
 		              onPointerDown={beginGridPan}
 		              onPointerMove={updateGridPan}
 		              onPointerUp={endGridPan}
-		              onPointerLeave={endGridPan}
-		              onPointerCancel={endGridPan}
-		              className={`flex gap-4 overflow-x-auto scrollbar-none pb-3 min-h-[500px] lg:min-h-0 ${
-		                isHeaderCollapsed ? 'lg:h-[calc(100vh-200px)]' : 'lg:h-[calc(100vh-240px)]'
-		              } ${isSpacePanning ? 'cursor-grab' : ''} ${isGridPanning ? 'cursor-grabbing select-none' : ''}`}
-		            >
+			              onPointerLeave={endGridPan}
+			              onPointerCancel={endGridPan}
+			              className={`flex gap-4 overflow-x-auto scrollbar-none pb-3 min-h-[500px] lg:min-h-0 ${
+			                isHeaderCollapsed
+			                  ? isSummaryVisible
+			                    ? 'lg:h-[calc(100vh-200px)]'
+			                    : 'lg:h-[calc(100vh-160px)]'
+			                  : isSummaryVisible
+			                    ? 'lg:h-[calc(100vh-240px)]'
+			                    : 'lg:h-[calc(100vh-200px)]'
+			              } ${isSpacePanning ? 'cursor-grab' : ''} ${isGridPanning ? 'cursor-grabbing select-none' : ''}`}
+			            >
 	              {orderedClassIds.map(classId => {
 	                const classStudents = classes[classId];
 	                const stats = getStats(classStudents);
