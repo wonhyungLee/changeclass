@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { Upload, Users, Download, ArrowRight, Settings, RotateCcw, Save, FileSpreadsheet, Move, Info, X, Link, Tag, AlertTriangle, Maximize2, Minimize2, Plus, Trash2, CheckCircle2, ArrowDownAZ, ArrowUpDown, ChevronDown, ChevronLeft, ChevronRight, Unlink, Search, MousePointerClick, ExternalLink } from 'lucide-react';
+import { Upload, Users, Download, ArrowRight, Settings, RotateCcw, Save, FileSpreadsheet, Move, Info, X, Link, Tag, AlertTriangle, Maximize2, Minimize2, Plus, Trash2, CheckCircle2, ArrowDownAZ, ArrowUpDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Unlink, Search, MousePointerClick, ExternalLink } from 'lucide-react';
 
 /**
  * 스마트 반배정 마법사 v2.6 (복구 버전)
@@ -51,9 +51,19 @@ const App = () => {
   const [searchTerm, setSearchTerm] = useState(''); // 검색어 상태
   const [noteDraft, setNoteDraft] = useState(''); // 비고 편집용 임시 값
   const [moveFocus, setMoveFocus] = useState(null); // { classId: string, studentIds: string[] }
+  const [isSpacePanning, setIsSpacePanning] = useState(false);
+  const [isGridPanning, setIsGridPanning] = useState(false);
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('changeclass:headerCollapsed') === '1';
+    } catch {
+      return false;
+    }
+  });
 
   const classGridRef = useRef(null);
   const classColumnRefs = useRef({});
+  const gridPanRef = useRef({ active: false, startX: 0, scrollLeft: 0 });
   const moveFocusTimeoutRef = useRef(null);
 
   // 모달이 열릴 때마다 현재 비고 내용을 편집 필드에 채워준다.
@@ -62,6 +72,59 @@ const App = () => {
       setNoteDraft(selectedStudent.note || '');
     }
   }, [selectedStudent]);
+
+  useEffect(() => {
+    if (step !== 'dashboard') {
+      setIsSpacePanning(false);
+      setIsGridPanning(false);
+      gridPanRef.current.active = false;
+      return;
+    }
+
+    const isTypingTarget = (target) => {
+      if (!target) return false;
+      if (target.isContentEditable) return true;
+      const tagName = String(target.tagName || '').toUpperCase();
+      return tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT';
+    };
+
+    const onKeyDown = (e) => {
+      if (e.code !== 'Space') return;
+      if (isTypingTarget(e.target)) return;
+      e.preventDefault();
+      setIsSpacePanning(true);
+    };
+
+    const onKeyUp = (e) => {
+      if (e.code !== 'Space') return;
+      setIsSpacePanning(false);
+      setIsGridPanning(false);
+      gridPanRef.current.active = false;
+    };
+
+    const onBlur = () => {
+      setIsSpacePanning(false);
+      setIsGridPanning(false);
+      gridPanRef.current.active = false;
+    };
+
+    window.addEventListener('keydown', onKeyDown, { passive: false });
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, [step]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('changeclass:headerCollapsed', isHeaderCollapsed ? '1' : '0');
+    } catch {
+      // ignore
+    }
+  }, [isHeaderCollapsed]);
 
   useEffect(() => {
     if (!moveFocus) return;
@@ -585,30 +648,95 @@ const App = () => {
     classEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
   };
 
+  const beginGridPan = (e) => {
+    if (!isSpacePanning) return;
+    if (e.button !== 0) return;
+    const grid = classGridRef.current;
+    if (!grid) return;
+
+    e.preventDefault();
+    gridPanRef.current.active = true;
+    gridPanRef.current.startX = e.clientX;
+    gridPanRef.current.scrollLeft = grid.scrollLeft;
+    setIsGridPanning(true);
+
+    try {
+      grid.setPointerCapture?.(e.pointerId);
+    } catch {
+      // ignore
+    }
+  };
+
+  const updateGridPan = (e) => {
+    if (!gridPanRef.current.active) return;
+    const grid = classGridRef.current;
+    if (!grid) return;
+
+    e.preventDefault();
+    const dx = e.clientX - gridPanRef.current.startX;
+    grid.scrollLeft = gridPanRef.current.scrollLeft - dx;
+  };
+
+  const endGridPan = (e) => {
+    if (!gridPanRef.current.active) return;
+    gridPanRef.current.active = false;
+    setIsGridPanning(false);
+
+    const grid = classGridRef.current;
+    try {
+      grid?.releasePointerCapture?.(e.pointerId);
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
       {/* Header */}
-      <header className="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <Users className="w-6 h-6" />
-            <h1 className="text-xl font-bold">스마트 반배정 마법사 v2.6</h1>
-          </div>
-          <div className="flex space-x-4 items-center">
-            <a
-              href="./배포용_사용설명서.html"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center px-3 py-1 bg-indigo-500 hover:bg-indigo-400 rounded text-sm transition font-medium border border-indigo-400"
-              title="사용설명서 열기"
-            >
-              <Info className="w-4 h-4 mr-1" /> 사용설명서
-            </a>
-            {step === 'dashboard' && (
-               <>
-                {/* 검색바 */}
-                <div className="relative mr-2">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-200 w-4 h-4" />
+      <header
+        className={`bg-indigo-600 text-white shadow-md sticky top-0 z-10 transition-all ${
+          isHeaderCollapsed ? 'py-2 px-4' : 'p-4'
+        }`}
+      >
+	        <div className="max-w-7xl mx-auto flex justify-between items-center">
+	          <div className="flex items-center gap-2">
+	            <Users className={isHeaderCollapsed ? 'w-5 h-5' : 'w-6 h-6'} />
+	            <h1 className={`${isHeaderCollapsed ? 'text-lg' : 'text-xl'} font-bold`}>스마트 반배정 마법사 v2.6</h1>
+	          </div>
+	          <div className={`flex items-center ${isHeaderCollapsed ? 'gap-2' : 'gap-4'}`}>
+	            <a
+	              href="./배포용_사용설명서.html"
+	              target="_blank"
+	              rel="noreferrer"
+	              className={`flex items-center bg-indigo-500 hover:bg-indigo-400 rounded transition font-medium border border-indigo-400 ${
+	                isHeaderCollapsed ? 'px-2 py-1 text-xs' : 'px-3 py-1 text-sm'
+	              }`}
+	              title="사용설명서 열기"
+	            >
+	              <Info className="w-4 h-4 mr-1" /> 사용설명서
+	            </a>
+	            {step === 'dashboard' && isHeaderCollapsed && (
+	              <button
+	                onClick={exportExcel}
+	                className="flex items-center px-2.5 py-1 bg-emerald-500 hover:bg-emerald-400 rounded text-xs font-bold shadow transition"
+	                title="엑셀 저장"
+	              >
+	                <Download className="w-4 h-4 mr-1" /> 저장
+	              </button>
+	            )}
+	            <button
+	              type="button"
+	              onClick={() => setIsHeaderCollapsed(prev => !prev)}
+	              className="p-1.5 rounded-lg border border-indigo-400 bg-indigo-500 hover:bg-indigo-400 transition"
+	              title={isHeaderCollapsed ? '헤더 펼치기' : '헤더 접기'}
+	            >
+	              {isHeaderCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+	            </button>
+	            {step === 'dashboard' && !isHeaderCollapsed && (
+	               <>
+	                {/* 검색바 */}
+	                <div className="relative mr-2">
+	                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-200 w-4 h-4" />
                     <input 
                         type="text" 
                         placeholder="학생 이름 검색..." 
@@ -655,7 +783,11 @@ const App = () => {
       </header>
 
       {/* Main Content */}
-      <main className={`max-w-7xl mx-auto p-6 ${isCompact ? 'max-w-[98%] px-2' : ''}`}>
+	      <main
+	        className={`max-w-7xl mx-auto ${step === 'dashboard' ? 'px-4 py-4' : 'p-6'} ${
+	          isCompact ? 'max-w-[98%] px-2' : ''
+	        }`}
+	      >
         
         {/* 모바일 팁 */}
         {step === 'dashboard' && (
@@ -777,7 +909,7 @@ const App = () => {
 	          <div className="animate-fade-in">
 	            {/* 상단 요약 바 */}
 	            {!isCompact && (
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
+	              <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200 mb-3 flex flex-wrap gap-4 items-center justify-between">
                 <div className="text-sm text-slate-500">
                   총 <span className="font-bold text-slate-900">{students.length}</span>명 배정 완료
                   <span className="mx-2 text-slate-300">|</span>
@@ -797,7 +929,7 @@ const App = () => {
 	            )}
 
 	            {/* 반 바로가기 / 가로 스크롤 컨트롤 (PC) */}
-	            <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200 mb-4 flex items-center gap-2">
+	            <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 mb-3 flex items-center gap-2">
 	              <span className="text-xs font-bold text-slate-600 whitespace-nowrap">반 바로가기</span>
 	              <div className="hidden lg:flex items-center gap-1">
 	                <button
@@ -817,7 +949,7 @@ const App = () => {
 	                  <ChevronRight className="w-4 h-4" />
 	                </button>
 	              </div>
-	              <div className="flex-1 overflow-x-auto">
+		              <div className="flex-1 overflow-x-auto scrollbar-none">
 	                <div className="flex items-center gap-1 min-w-max">
 	                  {orderedClassIds.map(classId => {
 	                    const isMoveFocusedClass = moveFocus?.classId === String(classId);
@@ -844,11 +976,18 @@ const App = () => {
 	              </span>
 	            </div>
 
-	            {/* 반별 컬럼 그리드 */}
-	            <div
-	              ref={classGridRef}
-	              className="flex gap-4 overflow-x-auto pb-8 min-h-[500px] lg:min-h-0 lg:h-[calc(100vh-280px)]"
-	            >
+		            {/* 반별 컬럼 그리드 */}
+		            <div
+		              ref={classGridRef}
+		              onPointerDown={beginGridPan}
+		              onPointerMove={updateGridPan}
+		              onPointerUp={endGridPan}
+		              onPointerLeave={endGridPan}
+		              onPointerCancel={endGridPan}
+		              className={`flex gap-4 overflow-x-auto scrollbar-none pb-3 min-h-[500px] lg:min-h-0 ${
+		                isHeaderCollapsed ? 'lg:h-[calc(100vh-200px)]' : 'lg:h-[calc(100vh-240px)]'
+		              } ${isSpacePanning ? 'cursor-grab' : ''} ${isGridPanning ? 'cursor-grabbing select-none' : ''}`}
+		            >
 	              {orderedClassIds.map(classId => {
 	                const classStudents = classes[classId];
 	                const stats = getStats(classStudents);
@@ -935,27 +1074,30 @@ const App = () => {
 	                        // 동명이인 체크
 	                        const isDuplicateName = nameCounts[student.name] > 1;
 
-	                        return (
-	                            <div
-	                            key={student.id}
-	                            id={`student-card-${student.id}`}
-	                            draggable
-	                            onDragStart={(e) => onDragStart(e, student, classId)}
-	                            onClick={() => setSelectedStudent(student)}
-	                            className={`
-	                                rounded-lg shadow-sm border transition-all duration-300 group relative
-	                                ${isCompact ? 'p-1.5' : 'p-3'}
-	                                ${student.gender === '남' ? 'border-l-4 border-l-blue-400' : ''}
-	                                ${student.gender === '여' ? 'border-l-4 border-l-pink-400' : ''}
-	                                ${isMatch 
-	                                    ? 'bg-yellow-50 ring-4 ring-yellow-400 ring-opacity-50 scale-105 z-10 border-yellow-200' 
-	                                    : isMoveFocusedStudent
-	                                      ? 'bg-indigo-50 ring-2 ring-indigo-400 ring-offset-2 ring-offset-slate-50 border-indigo-200 shadow-md'
-	                                    : 'bg-white border-slate-200 hover:shadow-md hover:border-indigo-300 cursor-move'
-	                                }
-	                                ${isDimmed ? 'opacity-30 grayscale blur-[1px]' : ''}
-	                            `}
-	                            >
+		                        return (
+		                            <div
+		                            key={student.id}
+		                            id={`student-card-${student.id}`}
+		                            draggable={!isSpacePanning}
+		                            onDragStart={(e) => onDragStart(e, student, classId)}
+		                            onClick={() => {
+		                              if (isSpacePanning) return;
+		                              setSelectedStudent(student);
+		                            }}
+		                            className={`
+		                                rounded-lg shadow-sm border transition-all duration-300 group relative
+		                                ${isCompact ? 'p-1.5' : 'p-3'}
+		                                ${student.gender === '남' ? 'border-l-4 border-l-blue-400' : ''}
+		                                ${student.gender === '여' ? 'border-l-4 border-l-pink-400' : ''}
+		                                ${isMatch 
+		                                    ? 'bg-yellow-50 ring-4 ring-yellow-400 ring-opacity-50 scale-105 z-10 border-yellow-200' 
+		                                    : isMoveFocusedStudent
+		                                      ? 'bg-indigo-50 ring-2 ring-indigo-400 ring-offset-2 ring-offset-slate-50 border-indigo-200 shadow-md'
+		                                    : `bg-white border-slate-200 hover:shadow-md hover:border-indigo-300 ${isSpacePanning ? 'cursor-grab' : 'cursor-move'}`
+		                                }
+		                                ${isDimmed ? 'opacity-30 grayscale blur-[1px]' : ''}
+		                            `}
+		                            >
                             <div className="flex justify-between items-start">
                                 <div className="flex-1 min-w-0">
                                 <div className={`font-bold flex items-center gap-1 ${isCompact ? 'text-xs truncate' : ''} ${isMatch ? 'text-slate-900 text-lg' : 'text-slate-800'}`}>
