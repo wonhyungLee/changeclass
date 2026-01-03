@@ -572,15 +572,25 @@
         <div class="muted">지원 형식: .xlsx / .xls / .csv · 첫 번째 시트(첫 탭)만 읽습니다.</div>
         <div class="divider"></div>
 
-        <h3>1-1. 반드시 확인할 것(체크리스트)</h3>
-        <ul class="bullets">
-          <li>첫 행에 컬럼명(헤더)이 있고, 데이터는 그 아래에 있습니다.</li>
-          <li>이름 컬럼은 <code>성명</code> 또는 <code>이름</code> 중 하나가 있습니다.</li>
-          <li>성별은 가능한 한 <code>남</code>/<code>남성</code>, <code>여</code>/<code>여성</code>으로 통일합니다(통계 정확도 향상).</li>
-          <li>동반 배정이 필요하면 같은 <code>그룹ID</code>를 넣습니다(예: 형제/자매/친구).</li>
-        </ul>
+	        <h3>1-1. 반드시 확인할 것(체크리스트)</h3>
+	        <ul class="bullets">
+	          <li>첫 행에 컬럼명(헤더)이 있고, 데이터는 그 아래에 있습니다.</li>
+	          <li>이름 컬럼은 <code>성명</code> 또는 <code>이름</code> 중 하나가 있습니다.</li>
+	          <li>성별은 가능한 한 <code>남</code>/<code>남성</code>, <code>여</code>/<code>여성</code>으로 통일합니다(통계 정확도 향상).</li>
+	          <li>동반 배정이 필요하면 같은 <code>그룹ID</code>를 넣습니다(예: 형제/자매/친구).</li>
+	        </ul>
+	        <div class="note">
+	          <strong>양식(추천): 구글시트 템플릿으로 작성</strong><br />
+	          <a
+	            href="https://docs.google.com/spreadsheets/d/10LRewT3RIy1Hu1Z7fMZYH1ZOetXpPCKf8gFaiXKDK8Y/edit?usp=sharing"
+	            target="_blank"
+	            rel="noreferrer"
+	          >기초자료 양식(구글시트) 열기</a>
+	          → <strong>파일 → 사본 만들기</strong> → 작성 → <strong>파일 → 다운로드 → Microsoft Excel(.xlsx)</strong> → 사이트에서 업로드합니다.<br />
+	          (사이트 첫 화면의 “기초자료 양식(구글시트) 열기” 버튼을 눌러도 동일합니다.)
+	        </div>
 
-        <div class="divider"></div>
+	        <div class="divider"></div>
 
         <h3>1-2. 인식하는 컬럼(헤더) 목록</h3>
         <table aria-label="인식 컬럼 목록">
@@ -749,24 +759,26 @@
 
         <div class="divider"></div>
 
-        <h3>5-1. 상단바(검색/정렬/보기/저장)</h3>
-        <ul class="bullets">
-          <li><strong>학생 이름 검색</strong>: 이름 일부 입력 → 해당 학생 카드만 강조 표시.</li>
-          <li><strong>가나다순/배정순</strong>: 반 내부 목록 정렬을 전환합니다.</li>
-          <li><strong>한눈에/카드형</strong>: 화면 밀도 전환(학생이 많으면 “카드형” 권장).</li>
-          <li><strong>재설정</strong>: 다시 반 개수 설정 화면으로 이동(현재 조정 내용은 사라질 수 있음).</li>
-          <li><strong>엑셀 저장</strong>: 현재 결과를 엑셀로 다운로드(가장 중요).</li>
-        </ul>
+	        <h3>5-1. 상단바(검색/정렬/보기/저장)</h3>
+	        <ul class="bullets">
+	          <li><strong>학생 이름 검색</strong>: 이름 일부 입력 → 해당 학생 카드만 강조 표시.</li>
+	          <li><strong>가나다순/배정순</strong>: 반 내부 목록 정렬을 전환합니다.</li>
+	          <li><strong>한눈에/카드형</strong>: 화면 밀도 전환(학생이 많으면 “카드형” 권장).</li>
+	          <li><strong>반 바로가기</strong>: 화면 상단의 “반 바로가기”에서 원하는 반으로 즉시 이동합니다(PC에서 편리).</li>
+	          <li><strong>재설정</strong>: 다시 반 개수 설정 화면으로 이동(현재 조정 내용은 사라질 수 있음).</li>
+	          <li><strong>엑셀 저장</strong>: 현재 결과를 엑셀로 다운로드(가장 중요).</li>
+	        </ul>
 
         <div class="divider"></div>
 
-        <h3>5-2. 반(컬럼) 이해하기</h3>
-        <ul class="bullets">
-          <li>각 반은 “1반, 2반 …” 형태의 세로 컬럼으로 표시됩니다.</li>
-          <li>반 헤더에는 <strong>총 인원</strong>과 <strong>남/여 인원</strong>이 표시됩니다.</li>
-          <li>헤더에 <span class="pill warn">동명</span> 표시가 있으면, 그 반 안에 <strong>동명이인</strong>이 있습니다.</li>
-          <li>반이 비어 있으면(학생 0명) 휴지통 아이콘으로 <strong>빈 반 삭제</strong>가 가능합니다.</li>
-        </ul>
+	        <h3>5-2. 반(컬럼) 이해하기</h3>
+	        <ul class="bullets">
+	          <li>각 반은 “1반, 2반 …” 형태의 세로 컬럼으로 표시됩니다.</li>
+	          <li>반 헤더에는 <strong>총 인원</strong>과 <strong>남/여 인원</strong>이 표시됩니다.</li>
+	          <li>헤더에 <span class="pill warn">동명</span> 표시가 있으면, 그 반 안에 <strong>동명이인</strong>이 있습니다.</li>
+	          <li>반이 비어 있으면(학생 0명) 휴지통 아이콘으로 <strong>빈 반 삭제</strong>가 가능합니다.</li>
+	          <li>PC에서는 각 반 컬럼 내부 스크롤로 학생 목록을 확인할 수 있어, 페이지 전체 스크롤이 줄어듭니다.</li>
+	        </ul>
 
         <div class="divider"></div>
 
@@ -791,11 +803,14 @@
             <p>학생 카드 클릭(탭) → 상세창의 “현재 배정(반 이동)” 드롭다운에서 반을 선택합니다.</p>
           </div>
         </div>
-        <div class="note">
-          <strong>그룹 학생을 이동할 때:</strong> 같은 반에 그룹원이 함께 있으면 “그룹 전체 이동” 여부를 묻는 창이 뜹니다(자세한 규칙은 6장 참고).
-        </div>
+	        <div class="note">
+	          <strong>그룹 학생을 이동할 때:</strong> 같은 반에 그룹원이 함께 있으면 “그룹 전체 이동” 여부를 묻는 창이 뜹니다(자세한 규칙은 6장 참고).
+	        </div>
+	        <div class="note">
+	          <strong>이동 확인:</strong> 학생을 이동하면 대상 반/학생 카드로 자동으로 이동하며, 잠시 강조 표시됩니다.
+	        </div>
 
-        <div class="divider"></div>
+	        <div class="divider"></div>
 
         <h3>5-5. 비고(특이사항) 입력</h3>
         <ol class="steps">
@@ -951,4 +966,3 @@
     </main>
   </body>
 </html>
-
