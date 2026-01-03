@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { Upload, Users, Download, ArrowRight, Settings, RotateCcw, Save, FileSpreadsheet, Move, Info, X, Link, Tag, AlertTriangle, Maximize2, Minimize2, Plus, Trash2, CheckCircle2, ArrowDownAZ, ArrowUpDown, ChevronDown, Unlink, Search, MousePointerClick } from 'lucide-react';
+import { Upload, Users, Download, ArrowRight, Settings, RotateCcw, Save, FileSpreadsheet, Move, Info, X, Link, Tag, AlertTriangle, Maximize2, Minimize2, Plus, Trash2, CheckCircle2, ArrowDownAZ, ArrowUpDown, ChevronDown, ChevronLeft, ChevronRight, Unlink, Search, MousePointerClick, ExternalLink } from 'lucide-react';
 
 /**
  * 스마트 반배정 마법사 v2.6 (복구 버전)
@@ -35,6 +35,9 @@ const normalizeGender = (value) => {
   return raw;
 };
 
+const TEMPLATE_SHEET_URL =
+  'https://docs.google.com/spreadsheets/d/10LRewT3RIy1Hu1Z7fMZYH1ZOetXpPCKf8gFaiXKDK8Y/edit?usp=sharing';
+
 const App = () => {
   const [step, setStep] = useState('upload'); // upload, config, dashboard
   const [students, setStudents] = useState([]);
@@ -47,6 +50,11 @@ const App = () => {
   const [isNameSorted, setIsNameSorted] = useState(false); // 이름순 정렬 상태
   const [searchTerm, setSearchTerm] = useState(''); // 검색어 상태
   const [noteDraft, setNoteDraft] = useState(''); // 비고 편집용 임시 값
+  const [moveFocus, setMoveFocus] = useState(null); // { classId: string, studentIds: string[] }
+
+  const classGridRef = useRef(null);
+  const classColumnRefs = useRef({});
+  const moveFocusTimeoutRef = useRef(null);
 
   // 모달이 열릴 때마다 현재 비고 내용을 편집 필드에 채워준다.
   useEffect(() => {
@@ -54,6 +62,32 @@ const App = () => {
       setNoteDraft(selectedStudent.note || '');
     }
   }, [selectedStudent]);
+
+  useEffect(() => {
+    if (!moveFocus) return;
+
+    const targetClassId = moveFocus.classId;
+    const targetStudentId = moveFocus.studentIds?.[0];
+
+    const classEl = classColumnRefs.current?.[targetClassId];
+    if (classEl) {
+      classEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+    }
+
+    if (!targetStudentId) return;
+
+    const scrollStudentIntoView = () => {
+      const studentEl = document.getElementById(`student-card-${targetStudentId}`);
+      if (!studentEl) return false;
+      studentEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+      return true;
+    };
+
+    requestAnimationFrame(() => {
+      if (scrollStudentIntoView()) return;
+      setTimeout(scrollStudentIntoView, 120);
+    });
+  }, [moveFocus]);
 
   // 파일 업로드 및 파싱
   const handleFileUpload = async (e) => {
@@ -441,6 +475,20 @@ const App = () => {
     updateStudentNote(selectedStudent.id, value);
   };
 
+  const triggerMoveFocus = (targetClassId, studentIds) => {
+    const normalizedStudentIds = (studentIds || []).filter(Boolean);
+    if (!targetClassId || normalizedStudentIds.length === 0) return;
+
+    setMoveFocus({ classId: String(targetClassId), studentIds: normalizedStudentIds });
+
+    if (moveFocusTimeoutRef.current) {
+      clearTimeout(moveFocusTimeoutRef.current);
+    }
+    moveFocusTimeoutRef.current = setTimeout(() => {
+      setMoveFocus(null);
+    }, 1800);
+  };
+
   // --- 공통 이동 실행 함수 ---
   const executeMoveStudents = (fromClass, toClass, studentsToMove, deleteGroupId) => {
     setClasses(prev => {
@@ -480,6 +528,8 @@ const App = () => {
             note: deleteGroupId ? (prev.note + ` (그룹 ${movedTarget.groupId}에서 분리이동)`).trim() : prev.note
         }));
     }
+
+    triggerMoveFocus(toClass, studentsToMove.map(s => s.id));
   };
 
   const exportExcel = () => {
@@ -518,6 +568,21 @@ const App = () => {
     const boys = studentList.filter(s => s.gender === '남').length;
     const girls = studentList.filter(s => s.gender === '여').length;
     return { total, boys, girls };
+  };
+
+  const orderedClassIds = Object.keys(classes).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+
+  const scrollClassGridBy = (direction) => {
+    const grid = classGridRef.current;
+    if (!grid) return;
+    const amount = isCompact ? 180 : 320;
+    grid.scrollBy({ left: direction * amount, behavior: 'smooth' });
+  };
+
+  const scrollToClass = (classId) => {
+    const classEl = classColumnRefs.current?.[String(classId)];
+    if (!classEl) return;
+    classEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
   };
 
   return (
@@ -602,13 +667,13 @@ const App = () => {
 
         {/* Step 1: Upload */}
         {step === 'upload' && (
-          <div className="flex flex-col items-center justify-center h-[60vh] animate-fade-in">
+          <div className="flex flex-col items-center justify-center min-h-[60vh] py-8 animate-fade-in">
             <div className="bg-white p-10 rounded-2xl shadow-xl text-center max-w-lg w-full border border-slate-200">
               <div className="bg-indigo-100 p-4 rounded-full inline-block mb-4">
                 <FileSpreadsheet className="w-12 h-12 text-indigo-600" />
               </div>
               <h2 className="text-2xl font-bold mb-2">기초 자료 업로드</h2>
-              <p className="text-slate-500 mb-8">
+              <p className="text-slate-500 mb-6">
                 '성명', '성별', '그룹ID', '비고' 등이 포함된 엑셀 파일을 올려주세요.<br/>
                 <span className="text-xs text-slate-400">그룹ID가 같으면 <b>같은 반</b>에 배정됩니다.</span>
               </p>
@@ -629,6 +694,25 @@ const App = () => {
                   />
                 </div>
               </label>
+
+              <div className="mt-6 text-left">
+                <a
+                  href={TEMPLATE_SHEET_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 transition text-sm font-bold text-slate-700"
+                  title="구글 스프레드시트 양식 열기"
+                >
+                  <ExternalLink className="w-4 h-4 text-indigo-600" />
+                  기초자료 양식(구글시트) 열기
+                </a>
+                <ol className="mt-3 text-xs text-slate-500 list-decimal ml-5 space-y-1">
+                  <li>링크를 연 뒤, <b>파일 → 사본 만들기</b>로 내 드라이브에 복사합니다.</li>
+                  <li>사본에서 학생 명단을 작성합니다.</li>
+                  <li><b>파일 → 다운로드 → Microsoft Excel(.xlsx)</b>로 내려받습니다.</li>
+                  <li>다운받은 <b>.xlsx</b> 파일을 이 화면에서 업로드하여 사용합니다.</li>
+                </ol>
+              </div>
             </div>
           </div>
         )}
@@ -688,11 +772,11 @@ const App = () => {
           </div>
         )}
 
-        {/* Step 3: Dashboard */}
-        {step === 'dashboard' && (
-          <div className="animate-fade-in">
-            {/* 상단 요약 바 */}
-            {!isCompact && (
+	        {/* Step 3: Dashboard */}
+	        {step === 'dashboard' && (
+	          <div className="animate-fade-in">
+	            {/* 상단 요약 바 */}
+	            {!isCompact && (
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
                 <div className="text-sm text-slate-500">
                   총 <span className="font-bold text-slate-900">{students.length}</span>명 배정 완료
@@ -709,20 +793,72 @@ const App = () => {
                         <Link className="w-3 h-3 mr-1" /> 그룹 배정
                     </div>
                 </div>
-              </div>
-            )}
+	              </div>
+	            )}
 
-            {/* 반별 컬럼 그리드 */}
-            <div className="flex gap-4 overflow-x-auto pb-8 min-h-[500px]">
-              {Object.keys(classes).map(classId => {
-                const classStudents = classes[classId];
-                const stats = getStats(classStudents);
-                const isDragOver = parseInt(dragOverClassId) === parseInt(classId);
+	            {/* 반 바로가기 / 가로 스크롤 컨트롤 (PC) */}
+	            <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200 mb-4 flex items-center gap-2">
+	              <span className="text-xs font-bold text-slate-600 whitespace-nowrap">반 바로가기</span>
+	              <div className="hidden lg:flex items-center gap-1">
+	                <button
+	                  type="button"
+	                  onClick={() => scrollClassGridBy(-1)}
+	                  className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition"
+	                  title="왼쪽으로 이동"
+	                >
+	                  <ChevronLeft className="w-4 h-4" />
+	                </button>
+	                <button
+	                  type="button"
+	                  onClick={() => scrollClassGridBy(1)}
+	                  className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition"
+	                  title="오른쪽으로 이동"
+	                >
+	                  <ChevronRight className="w-4 h-4" />
+	                </button>
+	              </div>
+	              <div className="flex-1 overflow-x-auto">
+	                <div className="flex items-center gap-1 min-w-max">
+	                  {orderedClassIds.map(classId => {
+	                    const isMoveFocusedClass = moveFocus?.classId === String(classId);
+	                    return (
+	                      <button
+	                        key={classId}
+	                        type="button"
+	                        onClick={() => scrollToClass(classId)}
+	                        className={`px-2.5 py-1 rounded-full text-xs font-bold border transition whitespace-nowrap ${
+	                          isMoveFocusedClass
+	                            ? 'bg-indigo-600 text-white border-indigo-600'
+	                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-indigo-50 hover:border-indigo-200'
+	                        }`}
+	                        title={`${classId}반으로 이동`}
+	                      >
+	                        {classId}반
+	                      </button>
+	                    );
+	                  })}
+	                </div>
+	              </div>
+	              <span className="hidden lg:block text-xs text-slate-500 whitespace-nowrap">
+	                학생 이동 시 자동으로 이동 위치로 이동합니다
+	              </span>
+	            </div>
 
-                // 정렬 로직 적용
-                const displayStudents = isNameSorted 
-                    ? [...classStudents].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
-                    : classStudents;
+	            {/* 반별 컬럼 그리드 */}
+	            <div
+	              ref={classGridRef}
+	              className="flex gap-4 overflow-x-auto pb-8 min-h-[500px] lg:min-h-0 lg:h-[calc(100vh-280px)]"
+	            >
+	              {orderedClassIds.map(classId => {
+	                const classStudents = classes[classId];
+	                const stats = getStats(classStudents);
+	                const isDragOver = parseInt(dragOverClassId) === parseInt(classId);
+	                const isMoveFocusedClass = moveFocus?.classId === String(classId);
+
+	                // 정렬 로직 적용
+	                const displayStudents = isNameSorted 
+	                    ? [...classStudents].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+	                    : classStudents;
 
                 // 반 내 동명이인 파악
                 const nameCounts = {};
@@ -731,24 +867,29 @@ const App = () => {
                 });
                 const hasDuplicateNames = Object.values(nameCounts).some(count => count > 1);
                 
-                return (
-                  <div 
-                    key={classId}
-                    onDragOver={(e) => onDragOver(e, classId)}
-                    onDragLeave={onDragLeave}
-                    onDrop={(e) => onDrop(e, classId)}
-                    className={`
-                        flex flex-col rounded-xl border-2 transition-all duration-200 relative
-                        ${isCompact ? 'w-[160px] min-w-[160px]' : 'w-[280px] min-w-[280px]'}
-                        ${isDragOver 
-                            ? 'bg-indigo-50 border-indigo-400 shadow-lg scale-[1.02]' 
-                            : 'bg-slate-100 border-transparent hover:border-slate-300'
-                        }
-                    `}
-                  >
-                    {/* 반 헤더 */}
-                    <div className={`bg-white rounded-t-xl shadow-sm border-b border-slate-200 sticky top-0 z-10 ${isCompact ? 'p-2' : 'p-4'}`}>
-                      <div className="flex justify-between items-center mb-1">
+	                return (
+	                  <div 
+	                    key={classId}
+	                    ref={(el) => {
+	                      if (el) classColumnRefs.current[String(classId)] = el;
+	                      else delete classColumnRefs.current[String(classId)];
+	                    }}
+	                    onDragOver={(e) => onDragOver(e, classId)}
+	                    onDragLeave={onDragLeave}
+	                    onDrop={(e) => onDrop(e, classId)}
+	                    className={`
+	                        flex flex-col rounded-xl border-2 transition-all duration-200 relative
+	                        ${isCompact ? 'w-[160px] min-w-[160px]' : 'w-[280px] min-w-[280px]'}
+	                        ${isDragOver 
+	                            ? 'bg-indigo-50 border-indigo-400 shadow-lg scale-[1.02]' 
+	                            : 'bg-slate-100 border-transparent hover:border-slate-300'
+	                        }
+	                        ${isMoveFocusedClass ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-slate-50' : ''}
+	                    `}
+	                  >
+	                    {/* 반 헤더 */}
+	                    <div className={`bg-white rounded-t-xl shadow-sm border-b border-slate-200 sticky top-0 z-10 ${isCompact ? 'p-2' : 'p-4'}`}>
+	                      <div className="flex justify-between items-center mb-1">
                         <div className="flex items-center">
                             <h3 className={`font-bold text-slate-800 ${isCompact ? 'text-sm' : 'text-lg'}`}>{classId}반</h3>
                             {hasDuplicateNames && (
@@ -780,36 +921,41 @@ const App = () => {
                           여 {stats.girls}
                         </span>
                       </div>
-                    </div>
+	                    </div>
 
-                    {/* 학생 리스트 */}
-                    <div className={`flex-1 overflow-y-auto ${isCompact ? 'p-1 space-y-1' : 'p-3 space-y-2'} min-h-[300px]`}>
-                      {displayStudents.map(student => {
-                        const isSearchActive = searchTerm.length > 0;
-                        const isMatch = isSearchActive && student.name.includes(searchTerm);
-                        const isDimmed = isSearchActive && !isMatch;
-                        
-                        // 동명이인 체크
-                        const isDuplicateName = nameCounts[student.name] > 1;
+	                    {/* 학생 리스트 */}
+	                    <div className={`flex-1 overflow-y-auto overscroll-contain ${isCompact ? 'p-1 space-y-1' : 'p-3 space-y-2'} min-h-[300px] lg:min-h-0`}>
+	                      {displayStudents.map(student => {
+	                        const isSearchActive = searchTerm.length > 0;
+	                        const isMatch = isSearchActive && student.name.includes(searchTerm);
+	                        const isDimmed = isSearchActive && !isMatch;
+	                        const isMoveFocusedStudent =
+	                          isMoveFocusedClass && Array.isArray(moveFocus?.studentIds) && moveFocus.studentIds.includes(student.id);
+	                        
+	                        // 동명이인 체크
+	                        const isDuplicateName = nameCounts[student.name] > 1;
 
-                        return (
-                            <div
-                            key={student.id}
-                            draggable
-                            onDragStart={(e) => onDragStart(e, student, classId)}
-                            onClick={() => setSelectedStudent(student)}
-                            className={`
-                                rounded-lg shadow-sm border transition-all duration-300 group relative
-                                ${isCompact ? 'p-1.5' : 'p-3'}
-                                ${student.gender === '남' ? 'border-l-4 border-l-blue-400' : ''}
-                                ${student.gender === '여' ? 'border-l-4 border-l-pink-400' : ''}
-                                ${isMatch 
-                                    ? 'bg-yellow-50 ring-4 ring-yellow-400 ring-opacity-50 scale-105 z-10 border-yellow-200' 
-                                    : 'bg-white border-slate-200 hover:shadow-md hover:border-indigo-300 cursor-move'
-                                }
-                                ${isDimmed ? 'opacity-30 grayscale blur-[1px]' : ''}
-                            `}
-                            >
+	                        return (
+	                            <div
+	                            key={student.id}
+	                            id={`student-card-${student.id}`}
+	                            draggable
+	                            onDragStart={(e) => onDragStart(e, student, classId)}
+	                            onClick={() => setSelectedStudent(student)}
+	                            className={`
+	                                rounded-lg shadow-sm border transition-all duration-300 group relative
+	                                ${isCompact ? 'p-1.5' : 'p-3'}
+	                                ${student.gender === '남' ? 'border-l-4 border-l-blue-400' : ''}
+	                                ${student.gender === '여' ? 'border-l-4 border-l-pink-400' : ''}
+	                                ${isMatch 
+	                                    ? 'bg-yellow-50 ring-4 ring-yellow-400 ring-opacity-50 scale-105 z-10 border-yellow-200' 
+	                                    : isMoveFocusedStudent
+	                                      ? 'bg-indigo-50 ring-2 ring-indigo-400 ring-offset-2 ring-offset-slate-50 border-indigo-200 shadow-md'
+	                                    : 'bg-white border-slate-200 hover:shadow-md hover:border-indigo-300 cursor-move'
+	                                }
+	                                ${isDimmed ? 'opacity-30 grayscale blur-[1px]' : ''}
+	                            `}
+	                            >
                             <div className="flex justify-between items-start">
                                 <div className="flex-1 min-w-0">
                                 <div className={`font-bold flex items-center gap-1 ${isCompact ? 'text-xs truncate' : ''} ${isMatch ? 'text-slate-900 text-lg' : 'text-slate-800'}`}>
