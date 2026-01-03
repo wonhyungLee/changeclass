@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>스마트 반배정 마법사 v2.6 — 배포용 상세 사용설명서</title>
+    <style>
+      :root {
+        --paper: #ffffff;
+        --bg: #0b1220;
+        --ink: #0f172a;
+        --muted: #475569;
+        --muted-2: #64748b;
+        --line: #e2e8f0;
+        --card: #ffffff;
+        --shadow: 0 14px 34px rgba(2, 6, 23, 0.12);
+        --brand: #4f46e5;
+        --brand-2: #06b6d4;
+        --warn: #f59e0b;
+        --danger: #ef4444;
+        --ok: #10b981;
+        --radius: 14px;
+        --radius-sm: 10px;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        color: var(--ink);
+        background: #f8fafc;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo",
+          "Malgun Gothic", "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.62;
+      }
+
+      a { color: inherit; }
+
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+          monospace;
+        font-size: 0.95em;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        padding: 0.1em 0.35em;
+        border-radius: 8px;
+        white-space: nowrap;
+      }
+
+      .wrap {
+        width: min(1120px, 100%);
+        margin: 0 auto;
+        padding: 28px 18px 44px;
+      }
+
+      .hero {
+        background:
+          radial-gradient(900px 420px at 20% 0%, rgba(79, 70, 229, 0.38), transparent),
+          radial-gradient(900px 520px at 90% 20%, rgba(6, 182, 212, 0.26), transparent),
+          linear-gradient(180deg, #0b1220, #0b1220);
+        color: #e2e8f0;
+        padding: 34px 0 26px;
+      }
+
+      .hero .wrap {
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+
+      .badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .badge {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        padding: 7px 12px;
+        border-radius: 999px;
+        font-weight: 800;
+        font-size: 12px;
+        letter-spacing: 0.2px;
+      }
+
+      .badge.soft {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.16);
+        font-weight: 750;
+      }
+
+      h1 {
+        margin: 0 0 6px;
+        font-size: 30px;
+        letter-spacing: -0.35px;
+      }
+
+      .subtitle {
+        margin: 0 0 18px;
+        color: rgba(226, 232, 240, 0.88);
+        font-weight: 650;
+        font-size: 14px;
+      }
+
+      .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin: 16px 0 16px;
+      }
+
+      .meta {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: var(--radius-sm);
+        padding: 10px 12px;
+        min-height: 58px;
+      }
+
+      .meta .label {
+        font-size: 11px;
+        letter-spacing: 0.2px;
+        color: rgba(226, 232, 240, 0.75);
+        margin-bottom: 3px;
+        font-weight: 800;
+      }
+
+      .meta .value {
+        color: rgba(255, 255, 255, 0.95);
+        font-weight: 800;
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .meta .value.fill {
+        font-weight: 900;
+        letter-spacing: 0.55px;
+      }
+
+      .callout {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: var(--radius);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.07);
+        color: rgba(255, 255, 255, 0.92);
+        font-weight: 700;
+        font-size: 13px;
+      }
+
+      .callout::before {
+        content: "i";
+        display: inline-grid;
+        place-items: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.16);
+        color: rgba(255, 255, 255, 0.95);
+        font-weight: 900;
+        flex: 0 0 auto;
+        margin-top: 1px;
+      }
+
+      .callout.warn {
+        background: rgba(245, 158, 11, 0.12);
+        border-color: rgba(245, 158, 11, 0.32);
+      }
+
+      .callout.warn::before {
+        content: "!";
+        background: rgba(245, 158, 11, 0.95);
+        color: #111827;
+      }
+
+      h2 {
+        margin: 0 0 10px;
+        font-size: 17px;
+        letter-spacing: -0.25px;
+      }
+
+      h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        letter-spacing: -0.15px;
+      }
+
+      .muted { color: var(--muted); }
+      .muted-2 { color: var(--muted-2); }
+
+      .grid {
+        display: grid;
+        gap: 14px;
+        margin: 18px 0;
+      }
+
+      .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 16px 16px;
+        box-shadow: var(--shadow);
+      }
+
+      .card.soft {
+        box-shadow: none;
+        background: #ffffff;
+      }
+
+      .toc {
+        display: grid;
+        gap: 10px;
+      }
+
+      .toc a {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        text-decoration: none;
+        font-weight: 800;
+        color: #0f172a;
+      }
+
+      .toc a:hover { border-color: #cbd5e1; background: #f8fafc; }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 22px;
+        padding: 0 9px;
+        border-radius: 999px;
+        background: #eef2ff;
+        border: 1px solid #e0e7ff;
+        color: #3730a3;
+        font-size: 12px;
+        font-weight: 900;
+        flex: 0 0 auto;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 22px;
+        padding: 0 9px;
+        border-radius: 999px;
+        background: #0f172a;
+        border: 1px solid #1e293b;
+        color: #e2e8f0;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.2px;
+      }
+
+      .tag.brand {
+        background: #4f46e5;
+        border-color: #4338ca;
+        color: #ffffff;
+      }
+
+      .tag.good {
+        background: #10b981;
+        border-color: #059669;
+        color: #ffffff;
+      }
+
+      .tag.warn {
+        background: #f59e0b;
+        border-color: #d97706;
+        color: #111827;
+      }
+
+      .steps {
+        margin: 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 8px;
+        font-size: 14px;
+      }
+
+      .steps.small { font-size: 13px; gap: 6px; }
+      .steps strong { color: #111827; }
+
+      .bullets {
+        margin: 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 8px;
+        font-size: 14px;
+      }
+
+      .divider {
+        height: 1px;
+        background: #e2e8f0;
+        margin: 14px 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 13px;
+      }
+
+      thead th {
+        background: #f1f5f9;
+        border-bottom: 1px solid var(--line);
+        color: #0f172a;
+        text-align: left;
+        padding: 10px 10px;
+        font-size: 12px;
+        letter-spacing: 0.2px;
+      }
+
+      tbody td {
+        border-bottom: 1px solid #eef2f7;
+        padding: 10px 10px;
+        vertical-align: top;
+      }
+
+      tbody tr:last-child td { border-bottom: none; }
+
+      .note {
+        margin-top: 12px;
+        padding: 11px 12px;
+        border-radius: 12px;
+        background: #ecfeff;
+        border: 1px solid #cffafe;
+        color: #0e7490;
+        font-size: 13px;
+        font-weight: 650;
+      }
+
+      .note strong { color: #0e7490; }
+
+      .danger {
+        margin-top: 12px;
+        padding: 11px 12px;
+        border-radius: 12px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+        font-size: 13px;
+        font-weight: 750;
+      }
+
+      .legend {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 12px;
+        margin-top: 12px;
+        padding: 12px 12px;
+        border-radius: 12px;
+        border: 1px dashed #dbeafe;
+        background: #f8fafc;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #0f172a;
+        font-weight: 750;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        display: inline-block;
+        flex: 0 0 auto;
+      }
+
+      .dot.blue { background: #3b82f6; }
+      .dot.yellow { background: #facc15; }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 20px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: #dbeafe;
+        border: 1px solid #bfdbfe;
+        color: #1d4ed8;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.2px;
+      }
+
+      .pill.warn {
+        background: #ffedd5;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+      }
+
+      .qa {
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        padding: 12px 12px;
+        margin-top: 10px;
+      }
+
+      .q {
+        font-weight: 950;
+        color: #0f172a;
+        margin-bottom: 6px;
+        font-size: 13px;
+      }
+
+      .a {
+        color: #334155;
+        font-size: 13px;
+        margin: 0;
+      }
+
+      .mini {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 12px;
+        background: #ffffff;
+      }
+
+      .mini p {
+        margin: 0;
+        color: #334155;
+        font-size: 13px;
+      }
+
+      .kbd {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+        height: 22px;
+        padding: 0 8px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        box-shadow: 0 2px 0 rgba(15, 23, 42, 0.06);
+        font-weight: 900;
+        font-size: 12px;
+        color: #0f172a;
+      }
+
+      .footer {
+        margin-top: 18px;
+        padding: 12px 4px 0;
+        color: #64748b;
+        font-size: 12px;
+        display: grid;
+        gap: 4px;
+      }
+
+      .page-break {
+        break-before: page;
+        page-break-before: always;
+      }
+
+      @media (max-width: 920px) {
+        .meta-grid { grid-template-columns: 1fr; }
+        .grid.two, .grid.three { grid-template-columns: 1fr; }
+        .legend { grid-template-columns: 1fr; }
+      }
+
+      @media print {
+        @page { size: A4; margin: 12mm; }
+        html, body { background: var(--paper); }
+        .wrap { width: 100%; padding: 0; }
+        .card { box-shadow: none; }
+        .hero { padding: 0 0 10px; }
+        .hero .wrap { padding: 0; }
+        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        a { text-decoration: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero" id="top">
+      <div class="wrap">
+        <div class="badge-row">
+          <div class="badge">배포용 · 상세 사용설명서</div>
+          <div class="badge soft">버전 v2.6</div>
+          <div class="badge soft">권장: Chrome/Edge</div>
+        </div>
+
+        <h1>스마트 반배정 마법사 v2.6</h1>
+        <p class="subtitle">처음 사용하는 분도 따라 할 수 있는 단계별 안내(업로드 → 배정 → 조정 → 저장/복구)</p>
+
+        <div class="meta-grid" aria-label="배포 정보">
+          <div class="meta">
+            <div class="label">접속 주소(URL)</div>
+            <div class="value fill">____________________________</div>
+          </div>
+          <div class="meta">
+            <div class="label">문의/담당</div>
+            <div class="value fill">____________________________</div>
+          </div>
+          <div class="meta">
+            <div class="label">문서 배포일</div>
+            <div class="value">2026-01-03</div>
+          </div>
+          <div class="meta">
+            <div class="label">대상</div>
+            <div class="value">반배정 담당자(교직원)</div>
+          </div>
+        </div>
+
+        <div class="callout warn">
+          작업 결과는 자동으로 저장되지 않습니다. 실수로 새로고침/닫기 전에 <strong>엑셀 저장</strong>으로 반드시 결과를 남기세요.
+        </div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="grid two">
+        <article class="card">
+          <h2 id="quick">0) 빠른 시작(요약)</h2>
+          <ol class="steps">
+            <li><strong>기초 자료 업로드</strong> — 학생 명단 엑셀(.xlsx/.xls/.csv) 선택</li>
+            <li><strong>반 배정 설정</strong> — 생성할 반 개수(2~15반) 선택</li>
+            <li><strong>배정 시작</strong> — 자동 반배정 완료</li>
+            <li><strong>대시보드 조정</strong> — 학생 이동(드래그/선택) + 비고 입력 + 반 추가/삭제</li>
+            <li><strong>엑셀 저장</strong> — <code>2025학년도_반배정결과.xlsx</code> 다운로드</li>
+          </ol>
+          <div class="note">
+            <strong>모바일 팁:</strong> 학생 카드를 탭 → 상세창에서 “현재 배정(반 이동)” 드롭다운으로 반을 바꿉니다.
+          </div>
+        </article>
+
+        <article class="card">
+          <h2 id="toc">목차</h2>
+          <div class="toc" aria-label="목차">
+            <a href="#prepare"><span>1) 업로드 엑셀 준비</span><span class="chip">필수</span></a>
+            <a href="#screens"><span>2) 화면/기능 한눈에</span><span class="chip">개요</span></a>
+            <a href="#upload"><span>3) 기초 자료 업로드</span><span class="chip">Step 1</span></a>
+            <a href="#config"><span>4) 반 배정 설정/배정 시작</span><span class="chip">Step 2</span></a>
+            <a href="#dashboard"><span>5) 대시보드 조정(이동/비고/반관리)</span><span class="chip">Step 3</span></a>
+            <a href="#group"><span>6) 그룹(동반 배정) 상세</span><span class="chip">중요</span></a>
+            <a href="#save"><span>7) 엑셀 저장/복구(이어 하기)</span><span class="chip">중요</span></a>
+            <a href="#faq"><span>8) 문제 해결(FAQ)</span><span class="chip">도움</span></a>
+            <a href="#privacy"><span>9) 개인정보/보안</span><span class="chip">안내</span></a>
+            <a href="#ops"><span>10) 운영자(배포) 체크리스트</span><span class="chip">옵션</span></a>
+          </div>
+        </article>
+      </section>
+
+      <section class="card" id="prepare">
+        <h2>1) 업로드 엑셀 준비(가장 중요)</h2>
+        <div class="muted">지원 형식: .xlsx / .xls / .csv · 첫 번째 시트(첫 탭)만 읽습니다.</div>
+        <div class="divider"></div>
+
+        <h3>1-1. 반드시 확인할 것(체크리스트)</h3>
+        <ul class="bullets">
+          <li>첫 행에 컬럼명(헤더)이 있고, 데이터는 그 아래에 있습니다.</li>
+          <li>이름 컬럼은 <code>성명</code> 또는 <code>이름</code> 중 하나가 있습니다.</li>
+          <li>성별은 가능한 한 <code>남</code>/<code>남성</code>, <code>여</code>/<code>여성</code>으로 통일합니다(통계 정확도 향상).</li>
+          <li>동반 배정이 필요하면 같은 <code>그룹ID</code>를 넣습니다(예: 형제/자매/친구).</li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <h3>1-2. 인식하는 컬럼(헤더) 목록</h3>
+        <table aria-label="인식 컬럼 목록">
+          <thead>
+            <tr>
+              <th style="width: 18%">항목</th>
+              <th style="width: 46%">컬럼명 예시</th>
+              <th>설명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>이름</strong></td>
+              <td><code>성명</code>, <code>이름</code></td>
+              <td>둘 중 하나는 있어야 합니다(권장: <code>성명</code>).</td>
+            </tr>
+            <tr>
+              <td><strong>성별</strong></td>
+              <td><code>성별</code></td>
+              <td><code>남</code>/<code>남성</code>, <code>여</code>/<code>여성</code>만 남/여로 집계(그 외는 기타).</td>
+            </tr>
+            <tr>
+              <td><strong>그룹ID</strong></td>
+              <td><code>그룹ID</code>, <code>그룹id</code>, <code>GroupID</code></td>
+              <td>값이 같으면 같은 반(동반 배정).</td>
+            </tr>
+            <tr>
+              <td><strong>비고</strong></td>
+              <td><code>비고</code></td>
+              <td>학생 상세창에서 수정 가능(입력 시 즉시 반영).</td>
+            </tr>
+            <tr>
+              <td>표시용(선택)</td>
+              <td><code>학년</code>, <code>반</code>, <code>번호</code>, <code>생년월일</code></td>
+              <td>화면 표시용입니다(배정 알고리즘에는 직접 반영되지 않습니다).</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="note">
+          <strong>그룹ID 입력 팁:</strong> 숫자/문자 모두 가능합니다. 단, <code>1</code>과 <code>01</code>은 다른 그룹으로 취급될 수 있으니 표기를 통일하세요.
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>1-3. “이어서 작업(복구)”용 컬럼(결과 파일 재업로드)</h3>
+        <div class="muted">저장한 결과 파일에는 자동으로 아래 컬럼이 포함됩니다. 이 파일을 다시 업로드하면 배정 상태가 복구됩니다.</div>
+        <table aria-label="복구용 컬럼">
+          <thead>
+            <tr>
+              <th style="width: 18%">항목</th>
+              <th style="width: 46%">컬럼명 예시</th>
+              <th>설명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>배정반</strong></td>
+              <td><code>배정반</code>, <code>배정 반</code>, <code>배정</code>, <code>신반</code></td>
+              <td>값에 숫자가 포함되면 인식합니다(예: <code>1</code>, <code>1반</code>).</td>
+            </tr>
+            <tr>
+              <td><strong>수동이동여부</strong></td>
+              <td><code>수동이동여부</code>, <code>수동 이동 여부</code>, <code>수동이동</code></td>
+              <td>값이 있으면 “수동 이동됨” 표시가 유지됩니다.</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="danger">
+          <strong>중요:</strong> 복구용으로 업로드할 때 <code>배정반</code>이 비어 있는 학생은 기본적으로 <code>1반</code>으로 들어갈 수 있습니다. 결과 파일은 가능하면 모든 행에 배정반이 채워진 상태로 사용하세요.
+        </div>
+      </section>
+
+      <section class="card" id="screens">
+        <h2>2) 화면/기능 한눈에</h2>
+        <div class="grid three" style="margin-top: 10px">
+          <div class="mini">
+            <h3><span class="tag">Step 1</span> 기초 자료 업로드</h3>
+            <p>엑셀 파일을 선택하여 학생 목록을 불러옵니다.</p>
+          </div>
+          <div class="mini">
+            <h3><span class="tag">Step 2</span> 반 배정 설정</h3>
+            <p>반 개수(2~15반)를 정하고 <span class="tag brand">배정 시작</span>을 누릅니다.</p>
+          </div>
+          <div class="mini">
+            <h3><span class="tag">Step 3</span> 대시보드</h3>
+            <p>학생 이동/비고 입력/반 추가·삭제 후 <span class="tag good">엑셀 저장</span>으로 마무리합니다.</p>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>2-1. 대시보드에서 자주 쓰는 기능</h3>
+        <ul class="bullets">
+          <li><strong>학생 이름 검색</strong>: 이름 일부 입력 → 해당 학생 카드만 강조(나머지는 흐림).</li>
+          <li><strong>가나다순/배정순</strong>: 반 내부 학생 목록의 정렬을 전환.</li>
+          <li><strong>한눈에/카드형</strong>: 많은 학생을 다룰 때 “카드형”이 가독성이 좋습니다.</li>
+          <li><strong>재설정</strong>: 같은 파일로 반 개수만 바꿔 다시 자동 배정합니다(현재 조정 내용은 사라짐).</li>
+          <li><strong>엑셀 저장</strong>: 현재 배정 결과를 파일로 저장(복구/공유 가능).</li>
+        </ul>
+      </section>
+
+      <section class="card" id="upload">
+        <h2>3) 기초 자료 업로드(Step 1)</h2>
+        <div class="muted">화면 상단 제목: “기초 자료 업로드”</div>
+        <div class="divider"></div>
+
+        <h3>3-1. 업로드 방법</h3>
+        <ol class="steps">
+          <li><strong>파일 선택하기</strong> 영역을 클릭합니다.</li>
+          <li>학생 명단 엑셀 파일(.xlsx/.xls/.csv)을 선택합니다.</li>
+          <li>파일을 읽은 뒤, 자동으로 다음 단계로 이동합니다.</li>
+        </ol>
+
+        <div class="note">
+          <strong>복구 파일 업로드:</strong> 업로드 파일에 <code>배정반</code>이 포함되어 있으면 “반 배정 설정”을 건너뛰고 곧바로 대시보드로 진입할 수 있습니다.
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>3-2. 업로드가 안 될 때(대표 원인)</h3>
+        <div class="qa">
+          <div class="q">“엑셀 라이브러리가 로드되지 않았습니다” 알림이 뜹니다.</div>
+          <p class="a">
+            기관/학교망에서 외부 다운로드가 차단되면 발생할 수 있습니다. 인터넷 연결을 확인하고 재시도하거나, 운영자에게 “오프라인 배포(라이브러리 포함)” 지원을 요청하세요.
+          </p>
+        </div>
+        <div class="qa">
+          <div class="q">업로드는 되는데 이름/성별이 비어 보입니다.</div>
+          <p class="a">
+            엑셀 첫 행의 컬럼명이 <code>성명</code>/<code>이름</code>, <code>성별</code> 등으로 되어 있는지 확인하세요. (공백/오타가 있으면 인식되지 않을 수 있습니다)
+          </p>
+        </div>
+      </section>
+
+      <section class="card" id="config">
+        <h2>4) 반 배정 설정/배정 시작(Step 2)</h2>
+        <div class="muted">화면 상단 제목: “반 배정 설정”</div>
+        <div class="divider"></div>
+
+        <h3>4-1. 설정 화면에서 보는 값</h3>
+        <ul class="bullets">
+          <li><strong>총 학생 수</strong>: 업로드된 행 기준으로 집계됩니다.</li>
+          <li><strong>동반 배정 그룹</strong>: <code>그룹ID</code>가 있는 학생들의 그룹 개수입니다.</li>
+          <li><strong>생성할 반 개수</strong>: 슬라이더로 2~15반을 선택합니다.</li>
+          <li><strong>예상</strong>: 반당 대략적인 인원 범위를 표시합니다.</li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <h3>4-2. 배정 시작</h3>
+        <ol class="steps">
+          <li>반 개수를 선택합니다(예: 6반).</li>
+          <li><span class="tag brand">배정 시작</span> 버튼을 누릅니다.</li>
+          <li>대시보드로 이동하여 결과를 확인합니다.</li>
+        </ol>
+
+        <div class="note">
+          <strong>결과가 마음에 들지 않으면?</strong> 대시보드에서 <span class="tag">재설정</span> → 반 개수 재선택 → 다시 <span class="tag brand">배정 시작</span>을 하면 새로 배정할 수 있습니다.
+        </div>
+      </section>
+
+      <section class="card" id="dashboard">
+        <h2>5) 대시보드 조정(이동/비고/반관리) (Step 3)</h2>
+        <div class="muted">배정 이후의 메인 화면입니다. 대부분의 작업은 이 화면에서 진행합니다.</div>
+
+        <div class="divider"></div>
+
+        <h3>5-1. 상단바(검색/정렬/보기/저장)</h3>
+        <ul class="bullets">
+          <li><strong>학생 이름 검색</strong>: 이름 일부 입력 → 해당 학생 카드만 강조 표시.</li>
+          <li><strong>가나다순/배정순</strong>: 반 내부 목록 정렬을 전환합니다.</li>
+          <li><strong>한눈에/카드형</strong>: 화면 밀도 전환(학생이 많으면 “카드형” 권장).</li>
+          <li><strong>재설정</strong>: 다시 반 개수 설정 화면으로 이동(현재 조정 내용은 사라질 수 있음).</li>
+          <li><strong>엑셀 저장</strong>: 현재 결과를 엑셀로 다운로드(가장 중요).</li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <h3>5-2. 반(컬럼) 이해하기</h3>
+        <ul class="bullets">
+          <li>각 반은 “1반, 2반 …” 형태의 세로 컬럼으로 표시됩니다.</li>
+          <li>반 헤더에는 <strong>총 인원</strong>과 <strong>남/여 인원</strong>이 표시됩니다.</li>
+          <li>헤더에 <span class="pill warn">동명</span> 표시가 있으면, 그 반 안에 <strong>동명이인</strong>이 있습니다.</li>
+          <li>반이 비어 있으면(학생 0명) 휴지통 아이콘으로 <strong>빈 반 삭제</strong>가 가능합니다.</li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <h3>5-3. 학생 카드(표식) 이해하기</h3>
+        <div class="legend" aria-label="표식 안내">
+          <div class="legend-item"><span class="dot blue" aria-hidden="true"></span> 수동 이동됨(자동 배정된 반에서 이동됨)</div>
+          <div class="legend-item"><span class="dot yellow" aria-hidden="true"></span> 비고 있음</div>
+          <div class="legend-item"><span class="pill" aria-hidden="true">그룹</span> 그룹ID 있음(동반 배정 대상)</div>
+          <div class="legend-item"><span class="pill warn" aria-hidden="true">동명</span> 반 내 동명이인 경고</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>5-4. 학생 이동 방법(가장 자주 씀)</h3>
+        <div class="grid two" style="margin-top: 10px">
+          <div class="mini">
+            <h3><span class="tag">PC</span> 드래그 이동</h3>
+            <p>학생 카드를 <strong>끌어서</strong> 다른 반 컬럼에 <strong>놓으면</strong> 이동합니다.</p>
+          </div>
+          <div class="mini">
+            <h3><span class="tag">공통</span> 상세창에서 이동</h3>
+            <p>학생 카드 클릭(탭) → 상세창의 “현재 배정(반 이동)” 드롭다운에서 반을 선택합니다.</p>
+          </div>
+        </div>
+        <div class="note">
+          <strong>그룹 학생을 이동할 때:</strong> 같은 반에 그룹원이 함께 있으면 “그룹 전체 이동” 여부를 묻는 창이 뜹니다(자세한 규칙은 6장 참고).
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>5-5. 비고(특이사항) 입력</h3>
+        <ol class="steps">
+          <li>학생 카드를 클릭해 상세창을 엽니다.</li>
+          <li>“비고 사항” 입력란에 내용을 적습니다.</li>
+          <li>입력 내용은 즉시 반영됩니다(최종 보존은 7장의 “엑셀 저장”).</li>
+        </ol>
+
+        <div class="divider"></div>
+
+        <h3>5-6. 반 추가/삭제</h3>
+        <ul class="bullets">
+          <li><strong>반 추가</strong>: 가장 오른쪽의 “반 추가” 버튼으로 새 반을 만들 수 있습니다.</li>
+          <li><strong>반 삭제</strong>: 학생이 0명인 반만 삭제할 수 있습니다(학생이 있으면 삭제 불가).</li>
+        </ul>
+      </section>
+
+      <section class="card" id="group">
+        <h2>6) 그룹(동반 배정) 기능 상세</h2>
+        <div class="muted">그룹ID가 같은 학생들은 기본적으로 같은 반에 배정되며, 이동 시에도 함께 움직이도록 돕습니다.</div>
+        <div class="divider"></div>
+
+        <h3>6-1. 그룹ID란?</h3>
+        <ul class="bullets">
+          <li>같은 <code>그룹ID</code>를 가진 학생은 “함께 배정되어야 하는 묶음”으로 처리됩니다.</li>
+          <li>대표 예: 형제/자매, 생활지도 상 동반 배정이 필요한 학생들, 학부모 요청 등.</li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <h3>6-2. 그룹 학생 이동 시 확인 창</h3>
+        <div class="muted">
+          그룹 학생을 이동할 때, 같은 반에 그룹원이 함께 있으면 다음 중 하나를 선택합니다.
+        </div>
+        <div class="grid two" style="margin-top: 10px">
+          <div class="mini">
+            <h3><span class="tag good">확인</span> 그룹 전체 이동</h3>
+            <p>선택한 학생 + 같은 그룹인 친구들이 <strong>함께</strong> 대상 반으로 이동합니다.</p>
+          </div>
+          <div class="mini">
+            <h3><span class="tag warn">취소</span> 이 학생만 이동(그룹 분리)</h3>
+            <p>선택한 학생만 이동하고, 해당 학생의 <strong>그룹 연결이 끊어질 수</strong> 있습니다.</p>
+          </div>
+        </div>
+        <div class="danger">
+          <strong>주의:</strong> 그룹 분리 이동/그룹 해제는 되돌리기 어렵습니다. 의도한 동작인지 확인하고 진행하세요.
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>6-3. 상세창의 “그룹 해제”</h3>
+        <ul class="bullets">
+          <li>학생 상세창에 <span class="pill">그룹</span> 정보가 있으면 “그룹 해제” 버튼이 보입니다.</li>
+          <li>그룹 해제를 누르면 확인 창이 뜨며, 진행 시 그룹 연결이 끊어집니다(되돌릴 수 없음 안내).</li>
+          <li>그룹을 강제 해제한 경우 비고에 “그룹 강제해제됨” 같은 문구가 자동으로 붙을 수 있습니다.</li>
+        </ul>
+      </section>
+
+      <section class="card" id="save">
+        <h2>7) 엑셀 저장/복구(이어 하기)</h2>
+        <div class="divider"></div>
+
+        <h3>7-1. 엑셀 저장(최종 마무리)</h3>
+        <ol class="steps">
+          <li>대시보드 상단의 <span class="tag good">엑셀 저장</span> 버튼을 누릅니다.</li>
+          <li><code>2025학년도_반배정결과.xlsx</code> 파일이 다운로드됩니다.</li>
+          <li>다운로드 폴더에서 파일을 열어 저장 내용을 확인합니다(배정반/비고/그룹ID/수동이동여부 포함).</li>
+        </ol>
+        <div class="note">
+          <strong>권장:</strong> 파일명을 <code>반배정결과_YYYYMMDD_최종.xlsx</code>처럼 바꿔 보관하면 버전 관리가 쉽습니다.
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>7-2. 저장한 파일로 이어서 작업하기(복구)</h3>
+        <ol class="steps">
+          <li>처음 화면(기초 자료 업로드)에서 <strong>저장한 결과 파일</strong>을 업로드합니다.</li>
+          <li><code>배정반</code>을 읽어 자동으로 대시보드로 들어갑니다.</li>
+          <li>조정을 이어서 진행한 뒤 다시 <span class="tag good">엑셀 저장</span>합니다.</li>
+        </ol>
+
+        <div class="danger">
+          <strong>복구 시 주의:</strong> 일부 행의 <code>배정반</code>이 비어 있으면 학생이 1반으로 몰릴 수 있습니다. 복구 목적이라면 배정반이 모두 채워진 결과 파일을 사용하세요.
+        </div>
+      </section>
+
+      <section class="card" id="faq">
+        <h2>8) 문제 해결(FAQ)</h2>
+
+        <div class="qa">
+          <div class="q">Q. 동명이인(동명) 표시가 뜹니다. 어떻게 하나요?</div>
+          <p class="a">
+            A. 같은 반 안에 같은 이름이 2명 이상 있을 때 뜹니다. 생년월일/번호 등을 확인해 구분하고, 필요하면 해당 학생들을 다른 반으로 이동하거나 비고에 구분 정보를 적어두세요.
+          </p>
+        </div>
+
+        <div class="qa">
+          <div class="q">Q. 반 삭제가 안 됩니다.</div>
+          <p class="a">
+            A. 학생이 있는 반은 삭제할 수 없습니다. 그 반의 학생을 다른 반으로 이동한 뒤(0명) 다시 삭제하세요.
+          </p>
+        </div>
+
+        <div class="qa">
+          <div class="q">Q. 남/여 집계가 생각과 다릅니다.</div>
+          <p class="a">
+            A. 성별은 <code>남</code>/<code>남성</code>, <code>여</code>/<code>여성</code>만 남/여로 분류됩니다. 다른 표기(예: M/F)는 기타로 처리될 수 있으니 엑셀에서 통일하세요.
+          </p>
+        </div>
+
+        <div class="qa">
+          <div class="q">Q. 결과가 마음에 들지 않습니다. 다시 배정할 수 있나요?</div>
+          <p class="a">
+            A. 대시보드 상단의 “재설정”으로 반 배정 설정 화면으로 돌아가 반 개수를 조정하고 다시 “배정 시작”을 누르세요. (현재 조정 내용은 사라질 수 있습니다)
+          </p>
+        </div>
+
+        <div class="qa">
+          <div class="q">Q. 다른 파일로 다시 시작하고 싶습니다.</div>
+          <p class="a">
+            A. 페이지를 새로고침(<span class="kbd">F5</span>)한 뒤 새 엑셀 파일을 업로드하는 방식이 가장 확실합니다. 새로고침 전 현재 작업은 엑셀로 저장해 두세요.
+          </p>
+        </div>
+      </section>
+
+      <section class="card" id="privacy">
+        <h2>9) 개인정보/보안 안내</h2>
+        <ul class="bullets">
+          <li>학생 데이터는 브라우저에서 읽고 화면에 배치됩니다.</li>
+          <li>환경에 따라 엑셀 처리를 위해 외부 라이브러리 다운로드가 필요할 수 있습니다(기관망 차단 시 기능 제한).</li>
+          <li>업로드/저장 파일은 개인정보가 포함될 수 있으니, 배포·보관 시 학교/기관 지침을 따르세요.</li>
+        </ul>
+        <div class="note">
+          <strong>PDF로 배포:</strong> Chrome/Edge에서 이 파일을 열고 <span class="kbd">Ctrl</span> + <span class="kbd">P</span> → “PDF로 저장”. (선택: “배경 그래픽” 켜기)
+        </div>
+      </section>
+
+      <section class="card" id="ops">
+        <h2>10) 운영자(배포 담당) 체크리스트</h2>
+        <ul class="bullets">
+          <li>사용자에게 배포 전, 상단 “접속 주소(URL)” / “문의” 칸을 채워 배포합니다.</li>
+          <li>기관망에서 외부 다운로드가 차단되는 환경이면 “엑셀 라이브러리 로드” 문제가 발생할 수 있어 사전 점검이 필요합니다.</li>
+          <li>대량 학생(수백 명) 처리 시, “카드형 보기”가 가독성이 더 좋습니다.</li>
+          <li>교육청/학교 내부 규정에 맞게 파일 공유 경로(메일/드라이브/메신저)를 안내하세요.</li>
+        </ul>
+      </section>
+
+      <footer class="footer">
+        <div>문서명: 스마트 반배정 마법사 v2.6 배포용 상세 사용설명서</div>
+        <div class="muted-2">문서 내 버튼/표시명은 실제 화면 문구(기초 자료 업로드/반 배정 설정/대시보드)를 기준으로 작성했습니다.</div>
+        <div><a href="#top">맨 위로</a></div>
+      </footer>
+    </main>
+  </body>
+</html>
+
