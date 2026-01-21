@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as XLSX from 'xlsx';
-import { Upload, Users, Download, ArrowRight, Settings, RotateCcw, Save, FileSpreadsheet, Move, Info, X, Link, Tag, AlertTriangle, Maximize2, Minimize2, Plus, Trash2, CheckCircle2, ArrowDownAZ, ArrowUpDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Unlink, Search, MousePointerClick, ExternalLink } from 'lucide-react';
+import { Upload, Users, Download, ArrowRight, Settings, RotateCcw, Save, FileSpreadsheet, Move, Info, X, Link, Tag, AlertTriangle, Maximize2, Minimize2, Plus, Trash2, CheckCircle2, ArrowDownAZ, ArrowUpDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Unlink, Search, MousePointerClick, ExternalLink, Undo2 } from 'lucide-react';
 
 /**
  * 스마트 반배정 마법사 v2.6 (복구 버전)
@@ -38,6 +38,15 @@ const normalizeGender = (value) => {
 const TEMPLATE_SHEET_URL =
   'https://docs.google.com/spreadsheets/d/10LRewT3RIy1Hu1Z7fMZYH1ZOetXpPCKf8gFaiXKDK8Y/edit?usp=sharing';
 
+const findStudentInClasses = (classesState, studentId) => {
+  if (!classesState || !studentId) return null;
+  for (const classId of Object.keys(classesState)) {
+    const found = classesState[classId]?.find(student => student.id === studentId);
+    if (found) return found;
+  }
+  return null;
+};
+
 const App = () => {
   const [step, setStep] = useState('upload'); // upload, config, dashboard
   const [students, setStudents] = useState([]);
@@ -72,6 +81,50 @@ const App = () => {
   const classColumnRefs = useRef({});
   const gridPanRef = useRef({ active: false, startX: 0, scrollLeft: 0 });
   const moveFocusTimeoutRef = useRef(null);
+  const undoStackRef = useRef([]);
+  const [undoDepth, setUndoDepth] = useState(0);
+  const classesRef = useRef(classes);
+  const selectedStudentRef = useRef(selectedStudent);
+
+  useEffect(() => {
+    classesRef.current = classes;
+  }, [classes]);
+
+  useEffect(() => {
+    selectedStudentRef.current = selectedStudent;
+  }, [selectedStudent]);
+
+  useEffect(() => {
+    if (step === 'dashboard') return;
+    undoStackRef.current = [];
+    setUndoDepth(0);
+  }, [step]);
+
+  const pushUndoSnapshot = useCallback(() => {
+    const stack = undoStackRef.current;
+    stack.push({
+      classes: classesRef.current,
+      selectedStudentId: selectedStudentRef.current?.id ?? null
+    });
+    if (stack.length > 20) stack.shift();
+    setUndoDepth(stack.length);
+  }, []);
+
+  const undoLastAction = useCallback(() => {
+    const stack = undoStackRef.current;
+    if (stack.length === 0) return;
+    const snapshot = stack.pop();
+    setUndoDepth(stack.length);
+    setClasses(snapshot.classes);
+    setDraggedStudent(null);
+    setDragOverClassId(null);
+    setMoveFocus(null);
+
+    const restoredSelectedStudent = snapshot.selectedStudentId
+      ? findStudentInClasses(snapshot.classes, snapshot.selectedStudentId)
+      : null;
+    setSelectedStudent(restoredSelectedStudent);
+  }, []);
 
   // 모달이 열릴 때마다 현재 비고 내용을 편집 필드에 채워준다.
   useEffect(() => {
@@ -95,9 +148,11 @@ const App = () => {
       return tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT';
     };
 
+    const isSpacePanAllowedTarget = (target) => target?.dataset?.spacePan === '1';
+
     const onKeyDown = (e) => {
       if (e.code !== 'Space') return;
-      if (isTypingTarget(e.target)) return;
+      if (isTypingTarget(e.target) && !isSpacePanAllowedTarget(e.target)) return;
       e.preventDefault();
       setIsSpacePanning(true);
     };
@@ -124,6 +179,32 @@ const App = () => {
       window.removeEventListener('blur', onBlur);
     };
   }, [step]);
+
+  useEffect(() => {
+    if (step !== 'dashboard') return;
+
+    const isTypingTarget = (target) => {
+      if (!target) return false;
+      if (target.isContentEditable) return true;
+      const tagName = String(target.tagName || '').toUpperCase();
+      return tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT';
+    };
+
+    const onKeyDown = (e) => {
+      const isUndoShortcut =
+        (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === 'z' || e.key === 'Z');
+      if (!isUndoShortcut) return;
+      if (isTypingTarget(e.target)) return;
+      if (undoStackRef.current.length === 0) return;
+      e.preventDefault();
+      undoLastAction();
+    };
+
+    window.addEventListener('keydown', onKeyDown, { passive: false });
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [step, undoLastAction]);
 
   useEffect(() => {
     try {
@@ -569,6 +650,8 @@ const App = () => {
 
   // --- 공통 이동 실행 함수 ---
   const executeMoveStudents = (fromClass, toClass, studentsToMove, deleteGroupId) => {
+    if (!studentsToMove || studentsToMove.length === 0) return;
+    pushUndoSnapshot();
     setClasses(prev => {
       const sourceList = prev[fromClass].filter(s => !studentsToMove.find(m => m.id === s.id));
       
@@ -733,13 +816,32 @@ const App = () => {
 	              <Info className="w-4 h-4 mr-1" /> 사용설명서
 	            </a>
 	            {step === 'dashboard' && isHeaderCollapsed && (
-	              <button
-	                onClick={exportExcel}
-	                className="flex items-center px-2.5 py-1 bg-emerald-500 hover:bg-emerald-400 rounded text-xs font-bold shadow transition"
-	                title="엑셀 저장"
-	              >
-	                <Download className="w-4 h-4 mr-1" /> 저장
-	              </button>
+	              <>
+	                <button
+	                  type="button"
+	                  onClick={undoLastAction}
+	                  disabled={undoDepth === 0}
+	                  className={`p-1.5 rounded-lg border border-indigo-400 transition ${
+	                    undoDepth === 0
+	                      ? 'bg-indigo-500/60 text-indigo-200 cursor-not-allowed'
+	                      : 'bg-indigo-500 hover:bg-indigo-400 text-white'
+	                  }`}
+	                  title={
+	                    undoDepth === 0
+	                      ? '되돌릴 작업이 없습니다'
+	                      : `실행 취소 (Ctrl+Z, ${undoDepth}단계)`
+	                  }
+	                >
+	                  <Undo2 className="w-4 h-4" />
+	                </button>
+	                <button
+	                  onClick={exportExcel}
+	                  className="flex items-center px-2.5 py-1 bg-emerald-500 hover:bg-emerald-400 rounded text-xs font-bold shadow transition"
+	                  title="엑셀 저장"
+	                >
+	                  <Download className="w-4 h-4 mr-1" /> 저장
+	                </button>
+	              </>
 	            )}
 	            <button
 	              type="button"
@@ -757,6 +859,7 @@ const App = () => {
                     <input 
                         type="text" 
                         placeholder="학생 이름 검색..." 
+                        data-space-pan="1"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-9 pr-4 py-1.5 bg-indigo-700 border border-indigo-500 rounded-lg text-sm text-white placeholder-indigo-300 focus:outline-none focus:ring-2 focus:ring-white/50 w-32 sm:w-48 transition-all focus:w-64"
@@ -781,6 +884,21 @@ const App = () => {
                   {isCompact ? '카드형' : '한눈에'}
                 </button>
                 <div className="w-px h-6 bg-indigo-400 mx-1"></div>
+                <button
+                  type="button"
+                  onClick={undoLastAction}
+                  disabled={undoDepth === 0}
+                  className={`flex items-center px-3 py-1 rounded text-sm transition font-medium border ${
+                    undoDepth === 0
+                      ? 'bg-indigo-700/50 border-indigo-500 text-indigo-200 cursor-not-allowed'
+                      : 'bg-indigo-500 border-indigo-400 text-white hover:bg-indigo-400'
+                  }`}
+                  title={
+                    undoDepth === 0 ? '되돌릴 작업이 없습니다' : `실행 취소 (Ctrl+Z, ${undoDepth}단계)`
+                  }
+                >
+                  <Undo2 className="w-4 h-4 mr-1" /> 실행 취소
+                </button>
                 <button 
                   onClick={() => setStep('config')}
                   className="flex items-center px-3 py-1 bg-indigo-500 hover:bg-indigo-400 rounded text-sm transition"
