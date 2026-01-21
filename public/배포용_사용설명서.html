@@ -449,6 +449,27 @@
         font-size: 13px;
       }
 
+      .figure {
+        margin: 0;
+        padding: 0;
+      }
+
+      .figure img {
+        width: 100%;
+        display: block;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .figure figcaption {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 750;
+        letter-spacing: -0.1px;
+      }
+
       .kbd {
         display: inline-flex;
         align-items: center;
@@ -588,6 +609,36 @@
 	          >기초자료 양식(구글시트) 열기</a>
 	          → <strong>파일 → 사본 만들기</strong> → 작성 → <strong>파일 → 다운로드 → Microsoft Excel(.xlsx)</strong> → 사이트에서 업로드합니다.<br />
 	          (사이트 첫 화면의 “기초자료 양식(구글시트) 열기” 버튼을 눌러도 동일합니다.)
+	        </div>
+	        <div class="note">
+	          <strong>양식(대안): 나이스에서 학생 명렬표 엑셀 내려받기</strong><br />
+	          <ol class="steps small" style="margin-top: 8px">
+	            <li>나이스 → <code>학적관리·출결</code> → <code>기본학적관리</code> → <code>명렬표출력</code>으로 이동합니다.</li>
+	            <li><code>학년도</code>/<code>학년</code>(필요 시 <code>반</code>)을 선택하고 조회합니다.</li>
+	            <li>
+	              우측의 <strong>명렬표내용선택</strong>에서 필요한 항목만 추가합니다(추천: <code>성별</code>, <code>생년월일</code>).
+	              <br />
+	              <span class="muted-2">※ <code>주민등록번호</code> 등 민감정보는 선택하지 마세요.</span>
+	            </li>
+	            <li>우측 상단의 <strong>엑셀내려받기</strong>로 다운로드합니다.</li>
+	            <li>
+	              내려받은 파일에 <code>그룹ID</code>/<code>비고</code> 컬럼을 추가로 만들어 입력한 뒤 저장하고, 이 사이트에 업로드합니다.
+	            </li>
+	          </ol>
+	        </div>
+	        <div class="grid three" style="margin-top: 10px">
+	          <figure class="figure">
+	            <img src="./manual-assets/nice/1.png" alt="나이스에서 학적관리·출결 메뉴로 이동" loading="lazy" />
+	            <figcaption>1) 상단 메뉴에서 <strong>학적관리·출결</strong> → 기본학적관리</figcaption>
+	          </figure>
+	          <figure class="figure">
+	            <img src="./manual-assets/nice/2.png" alt="나이스 기본학적관리의 명렬표출력 화면" loading="lazy" />
+	            <figcaption>2) <strong>기본학적관리</strong> → <strong>명렬표출력</strong> (학년도/학년 선택)</figcaption>
+	          </figure>
+	          <figure class="figure">
+	            <img src="./manual-assets/nice/3.png" alt="명렬표내용선택에서 성별과 생년월일을 추가하고 엑셀내려받기" loading="lazy" />
+	            <figcaption>3) <strong>명렬표내용선택</strong> → 필요한 항목 추가 → <strong>엑셀내려받기</strong></figcaption>
+	          </figure>
 	        </div>
 
 	        <div class="divider"></div>
