@@ -460,6 +460,13 @@
         border-radius: 12px;
         border: 1px solid var(--line);
         background: #ffffff;
+        cursor: zoom-in;
+        transition: transform 140ms ease, box-shadow 140ms ease;
+      }
+
+      .figure img:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 34px rgba(2, 6, 23, 0.12);
       }
 
       .figure figcaption {
@@ -469,6 +476,68 @@
         font-weight: 750;
         letter-spacing: -0.1px;
       }
+
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background: rgba(2, 6, 23, 0.82);
+        z-index: 9999;
+      }
+
+      .lightbox.open { display: flex; }
+
+      .lightbox-inner {
+        width: min(1280px, 100%);
+        max-height: 92vh;
+        display: grid;
+        gap: 10px;
+      }
+
+      .lightbox-img {
+        width: 100%;
+        height: auto;
+        max-height: 86vh;
+        object-fit: contain;
+        border-radius: 14px;
+        border: 1px solid rgba(226, 232, 240, 0.18);
+        background: #0b1220;
+        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+        cursor: zoom-out;
+      }
+
+      .lightbox-caption {
+        color: rgba(226, 232, 240, 0.86);
+        font-size: 12px;
+        font-weight: 750;
+      }
+
+      .lightbox-close {
+        position: fixed;
+        top: 14px;
+        right: 14px;
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        border: 1px solid rgba(226, 232, 240, 0.25);
+        background: rgba(15, 23, 42, 0.65);
+        color: rgba(226, 232, 240, 0.95);
+        font-size: 22px;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .lightbox-close:hover { background: rgba(15, 23, 42, 0.9); }
+
+      .lightbox-close:focus {
+        outline: 3px solid rgba(99, 102, 241, 0.85);
+        outline-offset: 2px;
+      }
+
+      body.lightbox-open { overflow: hidden; }
 
       .kbd {
         display: inline-flex;
@@ -515,6 +584,7 @@
         .hero .wrap { padding: 0; }
         * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         a { text-decoration: none; }
+        .lightbox { display: none !important; }
       }
     </style>
   </head>
@@ -625,18 +695,40 @@
 	              내려받은 파일에 <code>그룹ID</code>/<code>비고</code> 컬럼을 추가로 만들어 입력한 뒤 저장하고, 이 사이트에 업로드합니다.
 	            </li>
 	          </ol>
+	          <div class="muted-2" style="margin-top: 6px">※ 아래 캡처 이미지는 클릭(또는 Enter)하면 크게 볼 수 있습니다.</div>
 	        </div>
 	        <div class="grid three" style="margin-top: 10px">
 	          <figure class="figure">
-	            <img src="./manual-assets/nice/1.png" alt="나이스에서 학적관리·출결 메뉴로 이동" loading="lazy" />
+	            <img
+	              src="./manual-assets/nice/1.png"
+	              alt="나이스에서 학적관리·출결 메뉴로 이동"
+	              loading="lazy"
+	              data-lightbox="1"
+	              tabindex="0"
+	              role="button"
+	            />
 	            <figcaption>1) 상단 메뉴에서 <strong>학적관리·출결</strong> → 기본학적관리</figcaption>
 	          </figure>
 	          <figure class="figure">
-	            <img src="./manual-assets/nice/2.png" alt="나이스 기본학적관리의 명렬표출력 화면" loading="lazy" />
+	            <img
+	              src="./manual-assets/nice/2.png"
+	              alt="나이스 기본학적관리의 명렬표출력 화면"
+	              loading="lazy"
+	              data-lightbox="1"
+	              tabindex="0"
+	              role="button"
+	            />
 	            <figcaption>2) <strong>기본학적관리</strong> → <strong>명렬표출력</strong> (학년도/학년 선택)</figcaption>
 	          </figure>
 	          <figure class="figure">
-	            <img src="./manual-assets/nice/3.png" alt="명렬표내용선택에서 성별과 생년월일을 추가하고 엑셀내려받기" loading="lazy" />
+	            <img
+	              src="./manual-assets/nice/3.png"
+	              alt="명렬표내용선택에서 성별과 생년월일을 추가하고 엑셀내려받기"
+	              loading="lazy"
+	              data-lightbox="1"
+	              tabindex="0"
+	              role="button"
+	            />
 	            <figcaption>3) <strong>명렬표내용선택</strong> → 필요한 항목 추가 → <strong>엑셀내려받기</strong></figcaption>
 	          </figure>
 	        </div>
@@ -1022,5 +1114,67 @@
         <div><a href="#top">맨 위로</a></div>
       </footer>
     </main>
+
+    <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-label="이미지 크게 보기">
+      <button type="button" id="lightbox-close" class="lightbox-close" aria-label="닫기">×</button>
+      <div class="lightbox-inner">
+        <img id="lightbox-img" class="lightbox-img" alt="" />
+        <div id="lightbox-caption" class="lightbox-caption"></div>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxCaption = document.getElementById('lightbox-caption');
+        const closeButton = document.getElementById('lightbox-close');
+        if (!lightbox || !lightboxImg || !lightboxCaption || !closeButton) return;
+
+        let lastActiveElement = null;
+
+        const open = (imgEl) => {
+          lastActiveElement = document.activeElement;
+          lightboxImg.src = imgEl.currentSrc || imgEl.src;
+          lightboxImg.alt = imgEl.alt || '';
+          lightboxCaption.textContent = imgEl.alt || '';
+          lightbox.classList.add('open');
+          document.body.classList.add('lightbox-open');
+          closeButton.focus();
+        };
+
+        const close = () => {
+          if (!lightbox.classList.contains('open')) return;
+          lightbox.classList.remove('open');
+          document.body.classList.remove('lightbox-open');
+          lightboxImg.src = '';
+          lightboxImg.alt = '';
+          lightboxCaption.textContent = '';
+          if (lastActiveElement && typeof lastActiveElement.focus === 'function') {
+            lastActiveElement.focus();
+          }
+          lastActiveElement = null;
+        };
+
+        closeButton.addEventListener('click', close);
+        lightbox.addEventListener('click', (e) => {
+          if (e.target === lightbox) close();
+        });
+        lightboxImg.addEventListener('click', close);
+        window.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') close();
+        });
+
+        document.querySelectorAll('img[data-lightbox="1"]').forEach((img) => {
+          img.addEventListener('click', () => open(img));
+          img.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              open(img);
+            }
+          });
+        });
+      })();
+    </script>
   </body>
 </html>
